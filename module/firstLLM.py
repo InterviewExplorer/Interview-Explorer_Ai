@@ -62,9 +62,6 @@ def generateQ(pdf_file) :
   )
 
   # 결과 출력, 여러 개의 답변 중 첫 번째 답변 가져오기
-  print(completion.choices[0].message.content)
-    return completion.choices[0].message.content
-  # 결과 출력
-  # print(completion.choices[0].message.content.strip())
+  return completion.choices[0].message.content
 
 
