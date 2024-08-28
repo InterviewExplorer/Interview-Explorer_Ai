@@ -10,28 +10,24 @@ from module.whisper_medium import transcribe_audio
 import io
 import os
 import uuid
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 허용할 도메인
+    allow_origins=["*"],  # 여기에 프론트엔드의 도메인 또는 '*'을 추가합니다
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # 필요한 HTTP 메서드를 설정합니다
+    allow_headers=["*"],  # 필요한 헤더를 설정합니다
 )
-
 
 # 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
 if not os.path.exists('audio'):
     os.makedirs('audio')
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-@app.post("/extract_audio")
-async def extract_audio(file: UploadFile = File(...)):
+@app.post("/process_audio")
+async def process_audio(file: UploadFile = File(...)):
     try:
         # 업로드된 파일을 메모리에서 직접 처리
         webm_file = io.BytesIO(await file.read())
@@ -42,23 +38,13 @@ async def extract_audio(file: UploadFile = File(...)):
 
         # webm 파일을 mp3로 변환
         convert_webm_to_mp3(webm_file, audio_output_path)
-
-        return JSONResponse(content={
-            "status": "success",
-            "message": f"오디오가 '{audio_output_path}'로 저장되었습니다."
-        })
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/extract_text")
-async def extract_text_from_mp3(file: UploadFile = File(...)):
-    try:
-        # 업로드된 MP3 파일을 메모리에서 직접 처리
-        mp3_file = io.BytesIO(await file.read())
         
-        # MP3 파일을 텍스트로 변환 (파일 경로 대신 파일 스트림을 전달)
-        transcript = transcribe_audio(mp3_file)
+        # MP3 파일을 텍스트로 변환
+        with open(audio_output_path, "rb") as mp3_file:
+            transcript = transcribe_audio(mp3_file)
+
+        # MP3 파일 삭제 (옵션: 디스크 공간 절약)
+        os.remove(audio_output_path)
 
         return JSONResponse(content={
             "status": "success",

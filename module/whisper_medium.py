@@ -2,6 +2,7 @@ import whisper
 import tempfile
 import shutil
 import os
+import torch
 
 def transcribe_audio(file_stream) -> str:
     """
@@ -10,8 +11,11 @@ def transcribe_audio(file_stream) -> str:
     :param file_stream: 변환할 MP3 파일의 스트림
     :return: 변환된 텍스트
     """
+    # GPU 또는 CPU 사용 여부 확인
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")  # GPU 사용 여부 출력
+
     # Whisper-medium 모델 로드
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
     model = whisper.load_model("medium")
 
     # 임시 파일 생성
