@@ -2,8 +2,7 @@
 from module import firstLLM
 import shutil
 from tempfile import NamedTemporaryFile
-from langchain.document_loaders import PyPDFLoader
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
@@ -71,16 +70,23 @@ async def extract_text_from_mp3(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generateQ/")
-async def create_upload_file(file: UploadFile = File(...), job: str = "", years: str = ""):
-    with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        temp_file_path = temp_file.name
+async def create_upload_file(
+    job: str = Form(...),
+    years: str = Form(...),
+    file: UploadFile = File(None)
+):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
 
-        # 여기서 직업군과 연차 데이터를 사용할 수 있습니다.
-        print(f"직업군: {job}, 연차: {years}")
-        print(f"PDF 파일 저장 경로: {temp_file_path}")
-        
-        # PDF 파일과 추가 데이터를 기반으로 질문 생성
-        result = firstLLM.generateQ(temp_file_path)  # firstLLM 부분은 구현에 따라 수정
+    pdf_content = None
+    if file:
+        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
+            pdf_content = temp_file.name
 
-        return {"result": result}
+    print(f"직업군: {job}, 연차: {years}")
+    if pdf_content:
+        print(f"PDF 파일 저장 경로: {pdf_content}")
+
+    result = firstLLM.generateQ(job, years, pdf_content)
+    return JSONResponse(content=result)
