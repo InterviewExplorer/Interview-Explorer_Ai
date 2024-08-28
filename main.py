@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 from langchain.document_loaders import PyPDFLoader
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
 import io
@@ -12,6 +13,15 @@ import os
 import uuid
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 허용할 도메인
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
 if not os.path.exists('audio'):
@@ -61,14 +71,16 @@ async def extract_text_from_mp3(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generateQ/")
-async def create_upload_file(file: UploadFile):
-
-     with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        # 업로드된 파일 내용을 읽어 임시 파일에 씁니다.
+async def create_upload_file(file: UploadFile = File(...), job: str = "", years: str = ""):
+    with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         shutil.copyfileobj(file.file, temp_file)
         temp_file_path = temp_file.name
 
-    
-    
-    
-        return { firstLLM.generateQ(temp_file_path)}
+        # 여기서 직업군과 연차 데이터를 사용할 수 있습니다.
+        print(f"직업군: {job}, 연차: {years}")
+        print(f"PDF 파일 저장 경로: {temp_file_path}")
+        
+        # PDF 파일과 추가 데이터를 기반으로 질문 생성
+        result = firstLLM.generateQ(temp_file_path)  # firstLLM 부분은 구현에 따라 수정
+
+        return {"result": result}
