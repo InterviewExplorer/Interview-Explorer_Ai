@@ -45,20 +45,12 @@ async def extract_text_from_mp3(file: UploadFile = File(...)):
         # 업로드된 MP3 파일을 메모리에서 직접 처리
         mp3_file = io.BytesIO(await file.read())
         
-        # 고유한 파일명을 생성
-        unique_filename = f"{uuid.uuid4().hex}.mp3"
-        audio_output_path = os.path.join("audio", unique_filename)
-
-        # MP3 파일을 로컬 파일로 저장
-        with open(audio_output_path, "wb") as f:
-            f.write(mp3_file.getbuffer())
-
-        # MP3 파일을 텍스트로 변환
-        transcript = transcribe_audio(audio_output_path)
+        # MP3 파일을 텍스트로 변환 (파일 경로 대신 파일 스트림을 전달)
+        transcript = transcribe_audio(mp3_file)
 
         return JSONResponse(content={
             "status": "success",
-            "message": f"'{audio_output_path}' 파일의 텍스트가 추출되었습니다.",
+            "message": "MP3 파일의 텍스트가 추출되었습니다.",
             "transcript": transcript
         })
 
