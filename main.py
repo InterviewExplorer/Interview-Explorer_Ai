@@ -10,8 +10,17 @@ from module.whisper_medium import transcribe_audio
 import io
 import os
 import uuid
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 여기에 프론트엔드의 도메인 또는 '*'을 추가합니다
+    allow_credentials=True,
+    allow_methods=["*"],  # 필요한 HTTP 메서드를 설정합니다
+    allow_headers=["*"],  # 필요한 헤더를 설정합니다
+)
 
 @app.post("/process_audio")
 async def process_audio(file: UploadFile = File(...)):
