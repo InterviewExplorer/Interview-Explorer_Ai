@@ -11,6 +11,7 @@ def transcribe_audio(file_stream) -> str:
     :return: 변환된 텍스트
     """
     # Whisper-medium 모델 로드
+    # device = "cuda" if torch.cuda.is_available() else "cpu"
     model = whisper.load_model("medium")
 
     # 임시 파일 생성
