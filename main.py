@@ -2,9 +2,9 @@
 from module import firstLLM
 import shutil
 from tempfile import NamedTemporaryFile
-from langchain.document_loaders import PyPDFLoader
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
 import io
@@ -21,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],  # 필요한 HTTP 메서드를 설정합니다
     allow_headers=["*"],  # 필요한 헤더를 설정합니다
 )
+
+# 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
+if not os.path.exists('audio'):
+    os.makedirs('audio')
 
 @app.post("/process_audio")
 async def process_audio(file: UploadFile = File(...)):
@@ -52,11 +56,23 @@ async def process_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generateQ/")
-async def create_upload_file(file: UploadFile):
+async def create_upload_file(
+    job: str = Form(...),
+    years: str = Form(...),
+    file: UploadFile = File(None)
+):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
 
-     with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        # 업로드된 파일 내용을 읽어 임시 파일에 씁니다.
-        shutil.copyfileobj(file.file, temp_file)
-        temp_file_path = temp_file.name
-        
-        return { firstLLM.generateQ(temp_file_path)}
+    pdf_content = None
+    if file:
+        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
+            pdf_content = temp_file.name
+
+    print(f"직업군: {job}, 연차: {years}")
+    if pdf_content:
+        print(f"PDF 파일 저장 경로: {pdf_content}")
+
+    result = firstLLM.generateQ(job, years, pdf_content)
+    return JSONResponse(content=result)
