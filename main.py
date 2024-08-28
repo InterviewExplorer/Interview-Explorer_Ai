@@ -7,9 +7,11 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
+from module.llm_openai import generate_question
 import io
 import os
 import uuid
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -72,3 +74,18 @@ async def create_upload_file(file: UploadFile):
     
     
         return { firstLLM.generateQ(temp_file_path)}
+     
+# 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
+class UserInfo(BaseModel):
+    role: str
+    experience_level: str
+    answer: str
+
+@app.post("/generate_question")
+async def create_question(user_info: UserInfo):
+    try:
+        user_info_dic = user_info.dict()
+        questions = generate_question(user_info_dic)
+        return JSONResponse(content={"questions": questions})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
