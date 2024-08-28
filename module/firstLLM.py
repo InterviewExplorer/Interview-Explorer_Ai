@@ -19,20 +19,43 @@ if api_key is None:
 client = OpenAI(api_key=api_key)
 
 # 사용자 입력 예시
-test = document
+user_experience_level = "2년"  # 경력 수준 예시
+user_role = "백엔드 개발자"  # 직군 예시
+user_skill = "자바"  # 사용자 기술 예시
+
+resume = document
 
 # API 호출을 위한 프롬프트 구성
-prompt = (
-    f"{test}를 토대로 이 사람이 써본 기술과 프로젝트 경험을 토대로 5가지의 질문을 만들고 이 사람의 인적사항과 진행한 프로젝트들의 이름도 알려줘"
-)
+markdown_prompt = f"""
+# Role
+you are the interviewer
+
+Output Format
+{{
+첫번째 질문: ,
+두번째 질문: 
+}}
+
+# Task
+- You will be provided with `{user_experience_level}`, `{user_role}`, `{user_skill}`, and optionally `{resume}`.
+- If `{resume}` is provided, create 2 technical questions based on the technologies and project experience described in `{resume}`.
+- If `{resume}` is not provided, create 2 technical questions based on `{user_experience_level}`, `{user_role}`, and `{user_skill}`.
+
+# Policy
+- If `{resume}` is provided, prioritize creating questions based on `{resume}` and do not rely on `{user_experience_level}`, `{user_role}`, or `{user_skill}` unless necessary.
+- If `{resume}` is not provided, create questions solely based on `{user_experience_level}`, `{user_role}`, and `{user_skill}`.
+- Do not create any other content beyond the two technical questions.
+- Just ask questions that can be explained in words.
+- Questions should be relevant, clear, and focused on assessing technical knowledge.
+"""
 
 # API 호출
 completion = client.chat.completions.create(
-    model="gpt-3.5-turbo",  # 또는 다른 지원되는 모델 이름
-    # model="gpt-4o-mini",
+    # model="gpt-3.5-turbo",  # 또는 다른 지원되는 모델 이름
+    model="gpt-4o-mini",
     messages=[
-        {"role": "system", "content": "당신은 면접관입니다. 사용자 입력에 따라 적절한 꼬리물기 질문을 생성해야 하며, 기술적인 질문만 만들어야 합니다."},
-        {"role": "user", "content": prompt}
+        {"role": "system", "content": "당신은 면접관입니다, 당신은 전문적인 개발자입니다"},
+        {"role": "user", "content": markdown_prompt}
     ]
 )
 
