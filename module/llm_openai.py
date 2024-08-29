@@ -29,14 +29,23 @@ def generate_question(user_info):
     else:
         years_with_suffix = user_info['years']
 
+    print(f"직업: {user_info['job']}, 경력: {years_with_suffix}")
+
+
     # API 호출을 위한 프롬프트
     # user_prompt = (
     #     f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 이며, "
     #     f"이 정보에 기반하여 {user_info['answer']}에 관한 적절한 난이도의 꼬리물기 질문을 생성하세요."
     # )
     user_prompt = (
-        f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 입니다. "
-        f"이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요."
+        f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 입니다."
+        "이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요."
+        "문제는 두 문제만 만들어야 합니다."
+        "# Output Format"
+        """
+        "Q1": "Your first question here"
+        "Q2": "Your second question here"
+        """
     )
 
     system_prompt = (
@@ -56,9 +65,10 @@ def generate_question(user_info):
         ],
         temperature=1.0,
         top_p=1.0,
-        n=2
+        n=1
     )
 
-    print(choice.message.content for choice in completion.choices)
+    for choice in completion.choices:
+        print(choice.message.content)
 
     return [choice.message.content for choice in completion.choices]
