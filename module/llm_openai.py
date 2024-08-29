@@ -25,7 +25,7 @@ def generate_question(user_info):
     years_with_suffix: str
 
     if user_info['years'] != "신입":
-        years_with_suffix = f"{user_info['years']}차"
+        years_with_suffix = f"{user_info['years']}년차"
     else:
         years_with_suffix = user_info['years']
 
