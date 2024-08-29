@@ -22,17 +22,21 @@ client = OpenAI(api_key=api_key)
 def generate_question(user_info):
 
     # 경력이 신입이 아닐 경우 "차" 문자열 붙이기
-    experience_with_suffix: str
+    years_with_suffix: str
 
-    if user_info['experience_level'] != "신입":
-        experience_with_suffix = f"{user_info['experience_level']}차"
+    if user_info['years'] != "신입":
+        years_with_suffix = f"{user_info['years']}차"
     else:
-        experience_with_suffix = user_info['experience_level']
+        years_with_suffix = user_info['years']
 
     # API 호출을 위한 프롬프트
+    # user_prompt = (
+    #     f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 이며, "
+    #     f"이 정보에 기반하여 {user_info['answer']}에 관한 적절한 난이도의 꼬리물기 질문을 생성하세요."
+    # )
     user_prompt = (
-        f"면접자는 {user_info['role']} 직군이고, 경력은 {experience_with_suffix} 이며, "
-        f"이 정보에 기반하여 {user_info['answer']}에 관한 적절한 난이도의 꼬리물기 질문을 생성하세요."
+        f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 입니다. "
+        f"이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요."
     )
 
     system_prompt = (
@@ -54,5 +58,7 @@ def generate_question(user_info):
         top_p=1.0,
         n=2
     )
+
+    print(choice.message.content for choice in completion.choices)
 
     return [choice.message.content for choice in completion.choices]

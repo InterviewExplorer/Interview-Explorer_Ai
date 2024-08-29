@@ -12,8 +12,18 @@ import io
 import os
 import uuid
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 클라이언트가 요청할 수 있는 출처
+    allow_credentials=True,
+    allow_methods=["*"],  # 허용할 HTTP 메서드 (GET, POST 등)
+    allow_headers=["*"],  # 허용할 HTTP 헤더
+)
 
 # 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
 if not os.path.exists('audio'):
@@ -77,9 +87,8 @@ async def create_upload_file(file: UploadFile):
      
 # 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
 class UserInfo(BaseModel):
-    role: str
-    experience_level: str
-    answer: str
+    job: str
+    years: str
 
 @app.post("/generate_question")
 async def create_question(user_info: UserInfo):
