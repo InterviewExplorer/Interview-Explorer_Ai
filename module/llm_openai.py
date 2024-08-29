@@ -1,6 +1,7 @@
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+import json
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -33,18 +34,18 @@ def generate_question(user_info):
 
 
     # API 호출을 위한 프롬프트
-    # user_prompt = (
-    #     f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 이며, "
-    #     f"이 정보에 기반하여 {user_info['answer']}에 관한 적절한 난이도의 꼬리물기 질문을 생성하세요."
-    # )
     user_prompt = (
-        f"면접자는 {user_info['job']} 직군이고, 경력은 {years_with_suffix} 입니다."
-        "이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요."
-        "문제는 두 문제만 만들어야 합니다."
-        "# Output Format"
-        """
-        "Q1": "Your first question here"
-        "Q2": "Your second question here"
+        f"""
+        
+        면접자는 {user_info["job"]} 직군이고, 경력은 {years_with_suffix} 입니다.
+        이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요.
+        문제는 두 문제만 만들어야 합니다.
+
+        # Output Format
+        {{
+            "Q3": "Your first question here"
+            "Q4": "Your second question here"
+        }}
         """
     )
 
@@ -63,12 +64,13 @@ def generate_question(user_info):
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=1.0,
+        temperature=0,
         top_p=1.0,
-        n=1
+        n=2
     )
 
-    for choice in completion.choices:
-        print(choice.message.content)
+    print(completion.choices[0].message.content)
+    
+    response_content = completion.choices[0].message.content
 
-    return [choice.message.content for choice in completion.choices]
+    return json.loads(response_content)

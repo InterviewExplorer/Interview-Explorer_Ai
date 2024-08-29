@@ -89,6 +89,6 @@ async def create_question(user_info: UserInfo):
     try:
         user_info_dic = user_info.dict()
         questions = generate_question(user_info_dic)
-        return JSONResponse(content={"questions": questions})
+        return JSONResponse(content=questions)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
