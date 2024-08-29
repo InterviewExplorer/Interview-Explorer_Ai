@@ -11,6 +11,8 @@ import io
 import os
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from module.llm_openai import generate_question
 
 app = FastAPI()
 
@@ -76,3 +78,17 @@ async def create_upload_file(
 
     result = firstLLM.generateQ(job, years, pdf_content)
     return JSONResponse(content=result)
+
+# 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
+class UserInfo(BaseModel):
+    job: str
+    years: str
+
+@app.post("/generate_question")
+async def create_question(user_info: UserInfo):
+    try:
+        user_info_dic = user_info.dict()
+        questions = generate_question(user_info_dic)
+        return JSONResponse(content={"questions": questions})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
