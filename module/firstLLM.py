@@ -36,8 +36,8 @@ def generateQ(job, years, pdf_file=None):
 
     # Output Format
     {{
-        "first_question": "Your first question here",
-        "second_question": "Your second question here"
+        "Q1": "Your first question here",
+        "Q2": "Your second question here"
     }}
 
     Resume content (if provided):
@@ -60,6 +60,6 @@ def generateQ(job, years, pdf_file=None):
     except json.JSONDecodeError:
         # If parsing fails, return a default structure
         return {
-            "first_question": "첫 번째 질문을 생성하는 데 문제가 발생했습니다.",
-            "second_question": "두 번째 질문을 생성하는 데 문제가 발생했습니다."
+            "Q1": "첫 번째 질문을 생성하는 데 문제가 발생했습니다.",
+            "Q2": "두 번째 질문을 생성하는 데 문제가 발생했습니다."
         }
