@@ -30,7 +30,9 @@ def generate_question(user_info):
     else:
         years_with_suffix = user_info['years']
 
-    print(f"직업: {user_info['job']}, 경력: {years_with_suffix}")
+    print(f"직업: {user_info['job']}")
+    print(f"경력: {years_with_suffix}")
+    print(f"답변: {user_info['answer']}")
 
 
     # API 호출을 위한 프롬프트
@@ -38,14 +40,13 @@ def generate_question(user_info):
         f"""
         
         면접자는 {user_info["job"]} 직군이고, 경력은 {years_with_suffix} 입니다.
-        이 정보에 기반하여 적절한 난이도의 꼬리물기 질문을 생성하세요.
-        문제는 두 문제만 만들어야 합니다.
+        이 정보에 기반하여 {user_info["answer"]}에 관한 적절한 난이도의 꼬리물기 질문을 생성하세요.
+        경력에 따라 난이도는 달라야하며, 경력이 오래될 수록 수준높은 질문과, 낮을 수록 난이도가 낮아야합니다.
+        문제는 한 문제만 만들어야 합니다.
+        질문은 한글로만 만들어야 합니다.
 
         # Output Format
-        {{
-            "Q3": "Your first question here"
-            "Q4": "Your second question here"
-        }}
+        "Your first question here",
         """
     )
 
@@ -60,6 +61,8 @@ def generate_question(user_info):
     # API 호출
     completion = client.chat.completions.create(
         model=gpt_model,
+        # model="gpt-4o",
+        # model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -69,8 +72,6 @@ def generate_question(user_info):
         n=2
     )
 
-    print(completion.choices[0].message.content)
-    
     response_content = completion.choices[0].message.content
 
     return json.loads(response_content)
