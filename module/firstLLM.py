@@ -53,7 +53,7 @@ def generateQ(job, years, pdf_file=None):
     """
 
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "당신은 면접관입니다, 당신은 전문적인 개발자입니다"},
             {"role": "user", "content": prompt}
