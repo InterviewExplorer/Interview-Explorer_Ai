@@ -2,22 +2,27 @@
 from module import firstLLM
 import shutil
 from tempfile import NamedTemporaryFile
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
+from module.ai_presenter import fetch_result_url
 import io
 import os
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from module.llm_openai import generate_question
+from typing import Dict
+import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
 
 app = FastAPI()
-
+@app.get("/")
+async def hello_world():
+    return {"message": "hello"}
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 여기에 프론트엔드의 도메인 또는 '*'을 추가합니다
@@ -80,6 +85,23 @@ async def create_upload_file(
 
     result = firstLLM.generateQ(job, years, pdf_content)
     return JSONResponse(content=result)
+
+@app.post("/ai-presenter")
+async def ai_presenter(request: Request):
+    form_data = await request.form()
+    questions = {key: value for key, value in form_data.items()}  # FormData를 딕셔너리로 변환
+    # print(questions)
+    # 모든 질문에 대해 결과 URL을 비동기적으로 가져오기
+    tasks = [fetch_result_url(key, question) for key, question in questions.items()]
+    results_list = await asyncio.gather(*tasks)
+    # print(results_list, "results_list")
+    # 결과를 하나의 딕셔너리로 병합하기
+    results = {}
+    for result in results_list:
+        results.update(result)
+    # print(results)
+    # 결과를 JSON 형태로 반환
+    return  results
 
 # 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
 class UserInfo(BaseModel):
