@@ -88,18 +88,18 @@ async def create_upload_file(
 async def ai_presenter(request: Request):
     form_data = await request.form()
     questions = {key: value for key, value in form_data.items()}  # FormData를 딕셔너리로 변환
-    print(questions)
+    # print(questions)
     # 모든 질문에 대해 결과 URL을 비동기적으로 가져오기
-    tasks = [fetch_result_url(question) for question in questions.values()]
+    tasks = [fetch_result_url(key, question) for key, question in questions.items()]
     results_list = await asyncio.gather(*tasks)
-    print(results_list, "results_list")
+    # print(results_list, "results_list")
     # 결과를 하나의 딕셔너리로 병합하기
     results = {}
     for result in results_list:
         results.update(result)
-    print(results)
+    # print(results)
     # 결과를 JSON 형태로 반환
-    return {"results": results}
+    return  results
 
 # 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
 class UserInfo(BaseModel):
