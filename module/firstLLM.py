@@ -11,10 +11,6 @@ def generateQ(job, years, pdf_file=None):
         raise ValueError("API_KEY가 없습니다.")
 
     client = OpenAI(api_key=api_key)
-    
-    gpt_model = os.getenv("gpt")
-    if gpt_model is None:
-        raise ValueError("GPT_Model이 없습니다.")
 
     resume_content = ""
     if pdf_file:
@@ -57,7 +53,7 @@ def generateQ(job, years, pdf_file=None):
     """
 
     completion = client.chat.completions.create(
-        model=gpt_model,
+        model=os.getenv("gpt"),
         messages=[
             {"role": "system", "content": "당신은 면접관입니다, 당신은 전문적인 개발자입니다"},
             {"role": "user", "content": prompt}
