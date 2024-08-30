@@ -13,6 +13,8 @@ import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from module.llm_openai import generate_question
+from module.openai_evaluate import evaluate_answer
+from module.openai_summarize import summarize_text
 
 app = FastAPI()
 
@@ -93,4 +95,42 @@ async def create_question(user_info: UserInfo):
         return PlainTextResponse(content=questions)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class EvaluateRequest(BaseModel):
+    question: str
+    answer: str
+    years: str
+    job: str
+
+@app.post("/evaluate")
+async def evaluate(request: EvaluateRequest):
+    # 요청 본문에서 데이터 추출
+    question = request.question
+    answer = request.answer
+    years = request.years
+    job = request.job
+
+    if not question or not answer or not years or not job:
+        raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
     
+    try:
+        # 답변 평가
+        evaluation = evaluate_answer(question, answer, years, job)
+        return JSONResponse(content={"evaluation": evaluation})
+    
+    except Exception as e:
+        # 에러 메시지 반환
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# 데이터 모델 정의
+class EvaluationData(BaseModel):
+    evaluations: dict
+
+@app.post("/summarize")
+async def summarize(data: EvaluationData):
+    try:
+        # 평가 내용을 기반으로 요약 생성
+        summary = summarize_text(data.evaluations)
+        return {"summary": summary}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
