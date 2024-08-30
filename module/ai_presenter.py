@@ -8,7 +8,7 @@ GET_URL_TEMPLATE = "https://api.d-id.com/clips/"
 HEADERS = {
     "accept": "application/json",
     "content-type": "application/json",
-    "authorization": os.getenv("did_token")  # 인증 토큰을 추가하세요
+    "authorization": "Basic YlhsMWEyOXVaMnh2ZG1WQVoyMWhhV3d1WTI5dDpBekU5WnVuWGFPU3pYaUV5djRuT2c="  # 인증 토큰을 추가하세요
 }
 
 async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
@@ -48,8 +48,8 @@ async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
     get_url = "https://api.d-id.com/clips/{}".format(clip_id)
     # print(get_url)
     # 폴링 로직을 사용하여 결과가 준비될 때까지 기다림
-    for _ in range(20):  # 최대 20번 재시도
-        await asyncio.sleep(5)  # 5초 대기 후 다시 요청 (필요에 따라 조정)
+    # for _ in range(10):  # 최대 20번 재시도
+    #     await asyncio.sleep(5)  # 5초 대기 후 다시 요청 (필요에 따라 조정)
 
     response = requests.get(get_url, headers=HEADERS)
     response_data = response.json()
