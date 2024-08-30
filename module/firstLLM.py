@@ -44,8 +44,12 @@ def generateQ(job, years, pdf_file=None):
     {{
         "Q1": "Your first question here",
         "Q2": "Your second question here"
-        "Q3": "Your thrid question here"
-        "Q4": "Your fourth question here"
+    }}
+    
+    Only if resume is provided, include these additional two questions:
+    {{
+    "Q3": "Your third question here",
+    "Q4": "Your fourth question here"
     }}
 
     Resume content (if provided):
@@ -68,9 +72,13 @@ def generateQ(job, years, pdf_file=None):
         return questions
     except json.JSONDecodeError:
         # If parsing fails, return a default structure
-        return {
+        default_questions = {
             "Q1": "첫 번째 질문을 생성하는 데 문제가 발생했습니다.",
-            "Q2": "두 번째 질문을 생성하는 데 문제가 발생했습니다.",
-            "Q3": "세 번째 질문을 생성하는 데 문제가 발생했습니다.",
-            "Q4": "네 번째 질문을 생성하는 데 문제가 발생했습니다."
+            "Q2": "두 번째 질문을 생성하는 데 문제가 발생했습니다."
         }
+        if resume_content:
+            default_questions.update({
+                "Q3": "세 번째 질문을 생성하는 데 문제가 발생했습니다.",
+                "Q4": "네 번째 질문을 생성하는 데 문제가 발생했습니다."
+            })
+        return default_questions

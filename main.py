@@ -3,7 +3,7 @@ from module import firstLLM
 import shutil
 from tempfile import NamedTemporaryFile
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
@@ -85,13 +85,14 @@ async def create_upload_file(
 class UserInfo(BaseModel):
     job: str
     years: str
+    answer: str
 
 @app.post("/generate_question")
 async def create_question(user_info: UserInfo):
     try:
         user_info_dic = user_info.dict()
         questions = generate_question(user_info_dic)
-        return JSONResponse(content={"questions": questions})
+        return PlainTextResponse(content=questions)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
