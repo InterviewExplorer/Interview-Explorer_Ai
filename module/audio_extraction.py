@@ -56,16 +56,6 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         # 포즈 추정 수행
         results = pose.process(rgb_frame)
 
-        # # results의 타입과 값을 출력하여 확인
-        # print("results Type: ", type(results))
-        # print("results Value: ", results)
-        
-        # # 랜드마크가 감지되었는지 확인
-        # if results.pose_landmarks:
-        #     print("Pose landmarks detected.")
-        # else:
-        #     print("No pose landmarks detected.")
-
         # 편집기능 다시 켜기
         rgb_frame.flags.writeable = True
 
@@ -84,12 +74,14 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
             )
 
         # 결과를 화면에 표시
-        cv2.imshow('Pose Detection', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # cv2.imshow('Pose Detection', frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     # 포즈 분석 및 피드백 수집
     feedback = analyze_pose_movement(results)
+    # print("feeddback_type: " + type(feedback))
+
     if feedback:
         feedback_list.extend(feedback)
 
@@ -102,4 +94,6 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
 
     # 최종 피드백 출력
     final_feedback = "".join(feedback_list)
-    print("최종 피드백: ", final_feedback)
+    # print("최종 피드백: ", final_feedback)
+
+    return final_feedback
