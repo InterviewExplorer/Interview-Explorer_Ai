@@ -18,7 +18,7 @@ from typing import Dict
 import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
-from module.pose_feedback import consolidate_feedback
+# from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
 @app.get("/")
@@ -84,22 +84,30 @@ async def process_audio(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# class FeedbackRequest(BaseModel):
+#     feedback: bool
+
 # 프론트에서 "면접 종료" 누르면 boolean 값을 받아와서 피드백을 쏴주고 리셋
-@app.post("/get_consolidate_feedback")
-async def get_consolidate_feedback(feedback: bool = Form(...)):
-    if feedback:
-        consolidated_feedback = await consolidate_feedback(feedback_manager.get_feedback())
-        feedback_manager.reset_feedback()
-        return JSONResponse(content={
-            "status": "success",
-            "consolidated_feedback": consolidated_feedback
-        })
-    else:
-        return JSONResponse(content={
-            "status": "error",
-            "message": "면접이 종료되지 않았습니다."
-        })
-    
+# @app.post("/get_consolidate_feedback")
+# async def get_consolidate_feedback(req: FeedbackRequest):
+#     try:
+#         if req.feedback:
+#             consolidated_feedback = await consolidate_feedback(feedback_manager.get_feedback())
+#             feedback_manager.reset_feedback()
+#             print("통합 피드백: ", consolidated_feedback)
+#             return JSONResponse(content={
+#                 "status": "success",
+#                 "consolidated_feedback": consolidated_feedback
+#             })
+#         else:
+#             return JSONResponse(content={
+#                 "status": "error",
+#                 "message": "면접이 종료되지 않았습니다."
+#             })
+#     except Exception as e:
+#         print(f"에러 발생: {str(e)}")  # 에러 로깅 추가
+#         raise HTTPException(status_code=422, detail=str(e))
+
 @app.post("/generateQ/")
 async def create_upload_file(
     job: str = Form(...),
