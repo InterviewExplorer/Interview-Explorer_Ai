@@ -18,6 +18,7 @@ from typing import Dict
 import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
+# from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
 @app.get("/")
@@ -35,6 +36,22 @@ app.add_middleware(
 if not os.path.exists('audio'):
     os.makedirs('audio')
 
+# 상태 관리 클래스 정의
+class FeedbackManager:
+    def __init__(self):
+        self.feedback = []  # 피드백을 저장할 리스트 초기화
+
+    def add_feedback(self, feedback):
+        self.feedback.extend(feedback)  # 피드백을 추가
+
+    def reset_feedback(self):
+        self.feedback = []  # 피드백 리스트 초기화
+
+    def get_feedback(self):
+        return self.feedback  # 현재 피드백 리스트 반환
+
+feedback_manager = FeedbackManager() # 피드백 인스턴스 생성
+
 @app.post("/process_audio")
 async def process_audio(file: UploadFile = File(...)):
     try:
@@ -46,7 +63,7 @@ async def process_audio(file: UploadFile = File(...)):
         audio_output_path = os.path.join("audio", unique_filename)
 
         # webm 파일을 mp3로 변환
-        convert_webm_to_mp3(webm_file, audio_output_path)
+        feedback = convert_webm_to_mp3(webm_file, audio_output_path)
         
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
@@ -54,6 +71,9 @@ async def process_audio(file: UploadFile = File(...)):
 
         # MP3 파일 삭제 (옵션: 디스크 공간 절약)
         os.remove(audio_output_path)
+
+        # 피드백 적재
+        feedback_manager.add_feedback(feedback)
 
         return JSONResponse(content={
             "status": "success",
@@ -63,6 +83,30 @@ async def process_audio(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# class FeedbackRequest(BaseModel):
+#     feedback: bool
+
+# 프론트에서 "면접 종료" 누르면 boolean 값을 받아와서 피드백을 쏴주고 리셋
+# @app.post("/get_consolidate_feedback")
+# async def get_consolidate_feedback(req: FeedbackRequest):
+#     try:
+#         if req.feedback:
+#             consolidated_feedback = await consolidate_feedback(feedback_manager.get_feedback())
+#             feedback_manager.reset_feedback()
+#             print("통합 피드백: ", consolidated_feedback)
+#             return JSONResponse(content={
+#                 "status": "success",
+#                 "consolidated_feedback": consolidated_feedback
+#             })
+#         else:
+#             return JSONResponse(content={
+#                 "status": "error",
+#                 "message": "면접이 종료되지 않았습니다."
+#             })
+#     except Exception as e:
+#         print(f"에러 발생: {str(e)}")  # 에러 로깅 추가
+#         raise HTTPException(status_code=422, detail=str(e))
 
 @app.post("/generateQ/")
 async def create_upload_file(
