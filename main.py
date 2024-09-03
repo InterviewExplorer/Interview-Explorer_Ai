@@ -74,6 +74,7 @@ async def process_audio(file: UploadFile = File(...)):
 
         # 피드백 적재
         feedback_manager.add_feedback(feedback)
+        print("각 영상 피드백: " + "".join(feedback))
 
         return JSONResponse(content={
             "status": "success",
