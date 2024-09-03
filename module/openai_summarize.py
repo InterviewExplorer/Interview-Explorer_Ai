@@ -22,13 +22,32 @@ client = OpenAI(api_key=api_key)
 def summarize_text(evaluations):
     # 평가 내용을 문자열로 변환
     evaluation_items = [f"평가 {i+1}: {evaluation}" for i, evaluation in enumerate(evaluations.values())]
+    evaluation_items_text = '\n'.join(evaluation_items)
     
     # 요약을 위한 프롬프트 생성
-    prompt = (
-        "다음은 기술 면접에 대한 평가 내용입니다:\n\n" +
-        "\n".join(evaluation_items) +
-        "\n\n위의 평가 내용을 바탕으로 5줄 내외로 요약, 정리해 주세요."
-    )
+    prompt = f"""
+    # Role
+    You are an expert interviewer evaluating technical responses. The interviewee is the candidate whose responses you are evaluating.
+
+    # Task
+    - Review the following technical evaluation content:
+
+    {evaluation_items_text}
+
+    - Based on the evaluation content, write a technical interview assessment in 5 lines or less.
+    - The assessment should be concise and provide a summary of the candidate's performance.
+
+    # Policy
+    - Ensure the assessment is clear and focused on the technical content.
+    - Do not include personal opinions or unrelated information.
+    - Keep the response within 5 lines, providing a summary of the evaluation.
+    - Provide all information and responses only in Korean.
+
+    # Output Format
+    {{
+        "총평": "the assessment is here"
+    }}
+    """
     
     # OpenAI API를 사용하여 요약 생성
     completion = client.chat.completions.create(
