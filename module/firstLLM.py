@@ -13,25 +13,25 @@ def generateQ(job, years, pdf_file=None):
 
     client = OpenAI(api_key=api_key)
 
-    # Elasticsearch 연결
-    es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")])
-    INDEX_NAME = os.getenv("ELASTICSEARCH_INDEX", "qa_index")
+    # # Elasticsearch 연결
+    # es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")])
+    # INDEX_NAME = os.getenv("ELASTICSEARCH_INDEX", "qa_index")
 
-    # Elasticsearch에서 관련 질문 검색
-    es_query = {
-        "query": {
-            "multi_match": {
-                "query": f"{job} {years}년차",
-                "fields": ["question"]
-            }
-        },
-        "size": 10  # 상위 10개 결과만 가져옴
-    }
-    es_result = es.search(index=INDEX_NAME, body=es_query)
+    # # Elasticsearch에서 관련 질문 검색
+    # es_query = {
+    #     "query": {
+    #         "multi_match": {
+    #             "query": f"{job} {years}년차",
+    #             "fields": ["question"]
+    #         }
+    #     },
+    #     "size": 10  # 상위 10개 결과만 가져옴
+    # }
+    # es_result = es.search(index=INDEX_NAME, body=es_query)
     
-    # Elasticsearch 결과에서 질문 추출
-    es_questions = [hit["_source"]["question"] for hit in es_result["hits"]["hits"]]
-    es_questions_str = "\n".join(es_questions)
+    # # Elasticsearch 결과에서 질문 추출
+    # es_questions = [hit["_source"]["question"] for hit in es_result["hits"]["hits"]]
+    # es_questions_str = "\n".join(es_questions)
 
     resume_content = ""
     if pdf_file:
