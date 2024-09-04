@@ -7,7 +7,8 @@ from langchain_text_splitters import CharacterTextSplitter
 
 # 설정
 ELASTICSEARCH_HOST = 'http://192.168.0.211:9200'
-INDEX_NAME = 'newtechnologyquestions'
+# INDEX_NAME = 'newtechnologyquestions'
+INDEX_NAME = 'test'
 URL = 'https://corin-e.tistory.com/entry/%EC%8B%A0%EC%9E%85-IT-%EA%B0%9C%EB%B0%9C%EC%9E%90-%EB%A9%B4%EC%A0%91-%EC%A7%88%EB%AC%B8-%EC%B4%9D-%EC%A0%95%EB%A6%AC-%EC%9D%B8%EC%84%B1%ED%9A%8C%EC%82%AC%EC%A7%81%EB%AC%B4%EA%B2%BD%ED%97%98%EA%B8%B0%EC%88%A0'
 
 # Elasticsearch 클라이언트 
@@ -108,16 +109,17 @@ def main():
 
     # 인덱스 삭제
     # delete_index('newtechnologyquestions')
+    # delete_index('test')
 
     # 웹에서 질문 데이터 추출 및 분할
     content = fetch_questions(URL)
     split_contents = split_text(content)
 
     # # 인덱스 생성
-    create_index()
+    # create_index()
 
     # 문서 인덱싱
-    index_documents(INDEX_NAME, split_contents)
+    # index_documents(INDEX_NAME, split_contents)
 
     print(f"총 {len(split_contents)}개의 청크로 분할되었습니다.")
     for i, chunk in enumerate(split_contents, 1):
@@ -125,7 +127,7 @@ def main():
         print(chunk)
 
     # 문서 확인
-    print_text_from_index()
+    # print_text_from_index()
 
 if __name__ == '__main__':
     main()
