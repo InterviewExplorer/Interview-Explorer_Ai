@@ -98,7 +98,7 @@ def generateQ(job, years, pdf_file=None, max_retries=3):
                         {"role": "system", "content": "You are the interviewer, you are a professional developer. You must always respond in the specified JSON format."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0
+                    temperature=0.7
                 )
                 response_content = completion.choices[0].message.content
                 questions = json.loads(response_content)

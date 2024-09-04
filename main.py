@@ -129,7 +129,17 @@ async def create_upload_file(
         print(f"PDF 파일 저장 경로: {pdf_content}")
 
     result = firstLLM.generateQ(job, years, pdf_content)
+
+    # PDF 파일 삭제
+    if pdf_content:
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+            
     return JSONResponse(content=result)
+
 
 @app.post("/ai-presenter")
 async def ai_presenter(request: Request):
