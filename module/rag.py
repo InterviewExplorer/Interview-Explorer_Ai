@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch
 from langchain_text_splitters import CharacterTextSplitter
 
 # 설정
-ELASTICSEARCH_HOST = 'http://localhost:9200'
+ELASTICSEARCH_HOST = 'http://192.168.0.211:9200'
 INDEX_NAME = 'newtechnologyquestions'
 URL = 'https://corin-e.tistory.com/entry/%EC%8B%A0%EC%9E%85-IT-%EA%B0%9C%EB%B0%9C%EC%9E%90-%EB%A9%B4%EC%A0%91-%EC%A7%88%EB%AC%B8-%EC%B4%9D-%EC%A0%95%EB%A6%AC-%EC%9D%B8%EC%84%B1%ED%9A%8C%EC%82%AC%EC%A7%81%EB%AC%B4%EA%B2%BD%ED%97%98%EA%B8%B0%EC%88%A0'
 
