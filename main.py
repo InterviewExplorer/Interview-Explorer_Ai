@@ -13,7 +13,7 @@ import os
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from module.llm_openai import generate_question
+from module.llm_openai import follow_Q
 from typing import Dict
 import asyncio
 from module.openai_evaluate import evaluate_answer
@@ -148,20 +148,28 @@ async def ai_presenter(request: Request):
     # 결과를 JSON 형태로 반환
     return  results
 
-# 데이터 모델 정의 (스웨거 테스트용, 곧 삭제 예정)
 class UserInfo(BaseModel):
     job: str
     years: str
     answer: str
+    questions: dict
 
-@app.post("/generate_question")
-async def create_question(user_info: UserInfo):
+@app.post("/follow_question")
+async def follow_question(userinfo: UserInfo):
+    job = userinfo.job
+    years = userinfo.years
+    answer = userinfo.answer
+    questions = userinfo.questions
+
+    if not answer or not years or not job:
+        raise HTTPException(status_code=400, detail="직업, 경력, 답변은 필수 항목입니다.")
+
     try:
-        user_info_dic = user_info.dict()
-        questions = generate_question(user_info_dic)
-        return PlainTextResponse(content=questions)
+        followQuestion = follow_Q(answer, years, job, questions)
+        return JSONResponse(content=followQuestion)
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 class EvaluateRequest(BaseModel):
     question: str
@@ -196,8 +204,8 @@ class EvaluationData(BaseModel):
 @app.post("/summarize")
 async def summarize(data: EvaluationData):
     try:
-        # 평가 내용을 기반으로 요약 생성
         summary = summarize_text(data.evaluations)
-        return {"summary": summary}
+        return JSONResponse(content=summary)
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
