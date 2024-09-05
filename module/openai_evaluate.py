@@ -1,8 +1,8 @@
-# openai_evaluate.py
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
 import json
+import time
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -20,60 +20,60 @@ if gpt_model is None:
 # OpenAI 클라이언트 초기화 및 api키 등록
 client = OpenAI(api_key=api_key)
 
-def evaluate_answer(question: str, answer: str, years: str, job: str) -> str:
+def evaluate_answer(question: str, answer: str, years: str, job: str) -> dict:
     prompt = f"""
     # Role
-    You are an expert interviewer evaluating technical responses.
+    You are a technical interviewer with expertise in conducting interviews.
 
     # Task
-    - Evaluate the provided answer based on the given question.
-    - Consider the candidate's job role ({job}) and years of experience ({years} years) when assessing the answer.
-    - Focus exclusively on the technical content of the answer.
-    - Provide a score from 0 to 100 on how well the answer fits the question, considering the technical depth appropriate for the role and experience level.
-    - Explain why the answer is rated as such, focusing solely on its technical content and relevance to the role and experience level.
-    - Provide a model answer that would be considered ideal for this question given the candidate's role and experience level.
+    1. Check if the answer ({answer}) contains any technical content. If there is no technical content, score it as 0.
+    2. If the answer contains technical content, check whether it is directly related to the technology mentioned in the question ({question}). If the answer is not directly related to the technology in the question, assign a score of 30 or lower, depending on the relevance of the answer.
+    3. If the answer is related to the technology in the question, evaluate the appropriateness of the answer based on the candidate's job role ({job}) and {years} years of experience. Assign a score from 0 to 100.
+    4. Explain the reason for the assigned score, focusing only on the technical content. The explanation must be provided in Korean.
+    5. Provide a model answer that would be considered ideal for this question, tailored to the candidate's job role and experience level. The model answer must be provided in Korean.
 
     # Policy
     - Ensure the evaluation is detailed and justifiable.
-    - Only assess the technical aspects of the answer. Do not evaluate personality, job fit, or organizational fit.
-    - Provide clear explanations for the rating given, including how the job role and experience level influenced the assessment.
-    - Include a model answer tailored to the candidate’s role and experience level to set a standard for ideal responses.
-    - Provide all information and responses only in Korean.
+    - Evaluate only the technical aspects of the answer; do not consider personality, job fit, or organizational fit.
+    - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
+    - Provide a model answer that reflects the appropriate depth for the job role and experience level, in Korean.
+    - Responses must be in JSON format.
+    - Place the score in the `score` value of the JSON output.
+    - Place the explanation in the `explanation` value of the JSON output.
+    - Place the model answer in the `model` value of the JSON output.
+    - Do not include any additional explanations beyond the specified output format.
 
     # Output Format
     {{
-        "질문": "{question}",
-        "답변": "{answer}",
-        "평가": "Evaluation score here",
-        "설명": "explanation here",
-        "모범답안": "Model answer here"
+        "score": "",
+        "explanation": "",
+        "model": ""
     }}
     """
 
-    completion = client.chat.completions.create(
-        model=gpt_model,
-        messages=[
-            {"role": "system", "content": "You are an expert interviewer evaluating technical responses."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0
-    )
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            completion = client.chat.completions.create(
+                model=gpt_model,
+                messages=[
+                    {"role": "system", "content": "You are an expert interviewer evaluating technical responses."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0
+            )
 
-    try:
-        response_content = completion.choices[0].message.content
-        result = json.loads(response_content)
-        
-        # Ensure the evaluation score is a number
-        if isinstance(result.get("평가"), str) and result["평가"].isdigit():
-            result["평가"] = int(result["평가"])
-        
-        return result
-    except json.JSONDecodeError:
-        # JSON 파싱 실패 시 기본 구조 반환
-        return {
-            "질문": question,
-            "답변": answer,
-            "평가": "응답을 평가하는 데 문제가 발생했습니다.",
-            "설명": "설명을 생성하는 데 문제가 발생했습니다.",
-            "모범답안": "모범답안을 생성하는 데 문제가 발생했습니다."
-        }
+            response_content = completion.choices[0].message.content
+            result = json.loads(response_content)
+            
+            # Ensure the evaluation score is a number
+            if isinstance(result.get("score"), str) and result["score"].isdigit():
+                result["score"] = int(result["score"])
+            
+            return result
+        except json.JSONDecodeError as e:
+            print(f"JSON 파싱 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")
+            time.sleep(2)  # 짧은 대기 후 재시도
+
+    # 모든 재시도 실패 시 기본 구조 반환
+    return {"error": "JSONDecodeError"}
