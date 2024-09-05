@@ -73,31 +73,31 @@ def get_feedback_from_llm(landmarks_text):
     # 피드백 적재
     return completion.choices[0].message.content
 
-# def consolidate_feedback(feedback_list):
-#     # 피드백 리스트를 종합하여 최종 피드백 생성
-#     user_prompt = "".join(feedback_list)
+def consolidate_feedback(feedback_list):
+    # 피드백 리스트를 종합하여 최종 피드백 생성
+    user_prompt = "".join(feedback_list)
 
-#     system_prompt = """
-#         # Role
-#         You are a distinguished expert tasked with consolidating individual feedback into a comprehensive analysis. Your task is to combine multiple feedback entries and provide a brief summary of the overall observations and recommendations.
+    system_prompt = """
+        # Role
+        You are a distinguished expert tasked with consolidating individual feedback into a comprehensive analysis. Your task is to combine multiple feedback entries and provide a brief summary of the overall observations and recommendations.
 
-#         # Output
-#         Provide a structured summary in Korean, synthesizing the individual feedback entries into a coherent and actionable analysis in about 3 sentences.
+        # Output
+        Provide a structured summary in Korean, synthesizing the individual feedback entries into a coherent and actionable analysis in about 3 sentences.
 
-#         # Task
-#         1. **Comprehensive Analysis**: Combine and summarize the provided feedback entries.
-#     """
+        # Task
+        1. **Comprehensive Analysis**: Combine and summarize the provided feedback entries.
+    """
 
-#     completion = client.chat.completions.create(
-#         model=gpt_model,
-#         messages=[
-#             {"role": "system", "content": system_prompt},
-#             {"role": "user", "content": f"Consolidate the following feedback entries into a brief summary: {user_prompt}"}
-#         ],
-#         temperature=0,
-#         top_p=0,
-#     )
+    completion = client.chat.completions.create(
+        model=gpt_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Consolidate the following feedback entries into a brief summary: {user_prompt}"}
+        ],
+        temperature=0,
+        top_p=0,
+    )
 
-#     # 최종 피드백 반환
-#     consolidated_feedback = completion.choices[0].message.content
-#     return consolidated_feedback
+    # 최종 피드백 반환
+    consolidated_feedback = completion.choices[0].message.content
+    return consolidated_feedback
