@@ -18,6 +18,7 @@ from typing import Dict
 import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
+from module.openai_speaking import evaluate_speaking
 # from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
@@ -219,3 +220,11 @@ async def summarize(data: EvaluationData):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/speaking")
+async def speaking(answers: str):
+    try:
+        evaluation_result = evaluate_speaking(answers)
+        return JSONResponse(content=evaluation_result)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
