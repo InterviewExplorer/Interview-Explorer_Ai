@@ -2,6 +2,7 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 import json
+import time
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -48,24 +49,31 @@ def summarize_text(evaluations):
         ""
     }}
     """
-    
-    # OpenAI API를 사용하여 요약 생성
-    completion = client.chat.completions.create(
-        model=gpt_model,
-        messages=[
-            {"role": "system", "content": "You are an expert interviewer evaluating technical responses."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=150,  # 5줄 내외로 요약
-        temperature=0,
-    )
-        
-    try:
-        response_content = completion.choices[0].message.content
-        return response_content
-    except json.JSONDecodeError:
-        return "JSONDecodeError 문제가 발생했습니다."
-    except Exception as e:
-        # 에러 발생 시 기본 구조 반환
-        return "평가 내용을 요약하는 데 문제가 발생했습니다."
 
+    max_retries = 3
+    for attempt in range(max_retries):
+        
+        try:
+            completion = client.chat.completions.create(
+                model=gpt_model,
+                messages=[
+                    {"role": "system", "content": "You are an expert interviewer evaluating technical responses."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=150,  # 5줄 내외로 요약
+                temperature=0,
+            )
+            
+            response_content = completion.choices[0].message.content
+            return response_content
+        
+        except json.JSONDecodeError as e:
+            print(f"JSON 파싱 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")
+            time.sleep(2)
+        
+        except Exception as e:
+            print(f"평가내용 요약 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")
+            time.sleep(2)
+
+    # 모든 재시도 실패 시 기본 구조 반환
+    return {"error": "오류가 발생했습니다."}

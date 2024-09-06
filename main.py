@@ -221,10 +221,16 @@ async def summarize(data: EvaluationData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# class Answers(BaseModel):
+#     answers: dict[str, str]
+
+class TextInput(BaseModel):
+    text: str
+    
 @app.post("/speaking")
-async def speaking(answers: str):
+async def speaking(input: TextInput):
     try:
-        evaluation_result = evaluate_speaking(answers)
-        return JSONResponse(content=evaluation_result)
+        evaluation = evaluate_speaking(input.text)
+        return evaluation
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        raise HTTPException(status_code=500, detail=str(e))
