@@ -33,6 +33,10 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
     mp_drawing = mp.solutions.drawing_utils
 
+    # MediaPipe 핸즈 모듈 초기화
+    # mp_hands = mp.solutions.hands
+    # hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
     # 비디오 파일을 열기
     cap = cv2.VideoCapture(temp_webm_path)
 
@@ -54,7 +58,10 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         rgb_frame.flags.writeable = False
 
         # 포즈 추정 수행
-        results = pose.process(rgb_frame)
+        pose_results = pose.process(rgb_frame)
+
+        # 핸즈 추정 수행
+        # hands_results = hands.process(rgb_frame)
 
         # 편집기능 다시 켜기
         rgb_frame.flags.writeable = True
@@ -63,23 +70,33 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
 
         # 랜드마크가 감지되었는지 확인 후 그리기
-        if results.pose_landmarks:
+        if pose_results.pose_landmarks:
             # 랜드마크와 연결선 그리기
             mp_drawing.draw_landmarks(
                 frame,
-                results.pose_landmarks,
+                pose_results.pose_landmarks,
                 mp_pose.POSE_CONNECTIONS,
                 mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2), # 랜드마크 스타일
                 mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2) # 연결선 스타일
             )
 
+        # if hands_results.multi_hand_landmarks:
+        #     for hand_landmarks in hands_results.multi_hand_landmarks:
+        #         mp_drawing.draw_landmarks(
+        #             frame,
+        #             hand_landmarks,
+        #             mp_hands.HAND_CONNECTIONS,
+        #             mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2), # 랜드마크 스타일
+        #             mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2) # 연결선 스타일
+        #         )
+
         # 결과를 화면에 표시
-        cv2.imshow('Pose Detection', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # cv2.imshow('Pose Detection', frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     # 포즈 분석 및 피드백 수집
-    feedback = analyze_pose_movement(results)
+    feedback = analyze_pose_movement(pose_results)
 
     if feedback:
         feedback_list.extend(feedback)

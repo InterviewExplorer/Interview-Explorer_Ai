@@ -13,41 +13,31 @@ gpt_model = os.getenv("gpt")
 # OpenAI 클라이언트 초기화
 client = OpenAI(api_key=api_key)
 
-def analyze_pose_movement(results):
-    if not results or not hasattr(results, 'pose_landmarks'):
+def analyze_pose_movement(pose_results):
+    if not pose_results or not hasattr(pose_results, 'pose_landmarks'):
         raise ValueError("포즈 랜드마크를 가져올 수 없습니다.")
     
     feedback: str = ""
 
     # 결과에서 포즈 랜드마크를 가져오기
-    pose_landmarks = results.pose_landmarks
+    pose_landmarks = pose_results.pose_landmarks
+    # hands_landmarks = hands_results.multi_hand_landmarks
 
-    if results.pose_landmarks:
+    if pose_landmarks:
         print("포즈 랜드마크가 사용 가능하고 유효합니다.")
     else:
         print("포즈 랜드마크를 사용할 수 없거나 유효하지 않습니다.")
 
-    if pose_landmarks:
-        # 랜드마크 정의
-        landmarks = {
-            "nose": pose_landmarks.landmark[0],
-            "mouth_left": pose_landmarks.landmark[9],
-            "mouth_right": pose_landmarks.landmark[10],
-            "left_shoulder": pose_landmarks.landmark[11],
-            "right_shoulder": pose_landmarks.landmark[12],
-            "left_elbow": pose_landmarks.landmark[13],
-            "right_elbow": pose_landmarks.landmark[14],
-            "left_wrist": pose_landmarks.landmark[15],
-            "right_wrist": pose_landmarks.landmark[16],
-        }
+    # if hands_landmarks:
+    #     print("손 랜드마크가 사용 가능하고 유효합니다.")
+    # else:
+    #     print("손 랜드마크를 사용할 수 없거나 유효하지 않습니다.")
 
-        feedback_list = analyze_landmarks(landmarks)
-        # print("피드백 확인: " + "\n".join(feedback_list))
-        
-        # AI 모델에 피드백 요청
+    if pose_landmarks:
+        feedback_list = analyze_landmarks(pose_landmarks)
         feedback = get_feedback_from_llm(feedback_list)
     else:
-        feedback = "포즈를 감지할 수 없습니다."
+        feedback = "포즈와 손을 감지할 수 없습니다."
 
     return feedback
 

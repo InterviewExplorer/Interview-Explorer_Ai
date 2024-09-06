@@ -2,12 +2,12 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader
-from elasticsearch import Elasticsearch
+# from elasticsearch import Elasticsearch
 import json
 
 def generateQ(job, years, pdf_file=None, max_retries=3):
     load_dotenv()
-    api_key = os.getenv("API_KEY2")
+    api_key = os.getenv("API_KEY")
     if api_key is None:
         raise ValueError("API_KEY가 없습니다.")
 
