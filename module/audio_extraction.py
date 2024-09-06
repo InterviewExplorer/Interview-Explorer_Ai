@@ -74,13 +74,12 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
             )
 
         # 결과를 화면에 표시
-        # cv2.imshow('Pose Detection', frame)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
+        cv2.imshow('Pose Detection', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     # 포즈 분석 및 피드백 수집
     feedback = analyze_pose_movement(results)
-    # print("feeddback_type: " + type(feedback))
 
     if feedback:
         feedback_list.extend(feedback)
@@ -94,6 +93,5 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
 
     # 최종 피드백 출력
     final_feedback = "".join(feedback_list)
-    # print("최종 피드백: ", final_feedback)
 
     return final_feedback

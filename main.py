@@ -84,6 +84,7 @@ async def process_audio(file: UploadFile = File(...)):
         })
 
     except Exception as e:
+        print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 class FeedbackRequest(BaseModel):
@@ -97,7 +98,7 @@ def get_consolidate_feedback(req: FeedbackRequest):
             feedback_list = feedback_manager.get_feedback()
             consolidated_feedback = consolidate_feedback(feedback_list)
             feedback_manager.reset_feedback()
-            print("통합 피드백: ", consolidated_feedback)
+            print("통합 피드백(get_consolidate_feedback): ", consolidated_feedback)
             return JSONResponse(content={
                 "status": "success",
                 "consolidated_feedback": consolidated_feedback
