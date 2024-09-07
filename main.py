@@ -74,7 +74,6 @@ async def process_audio(file: UploadFile = File(...)):
 
         # 피드백 적재
         feedback_manager.add_feedback(feedback)
-        # print("각 영상 피드백: " + "".join(feedback)) 
 
         return JSONResponse(content={
             "status": "success",
@@ -98,7 +97,7 @@ def get_consolidate_feedback(req: FeedbackRequest):
             feedback_list = feedback_manager.get_feedback()
             consolidated_feedback = consolidate_feedback(feedback_list)
             feedback_manager.reset_feedback()
-            print("통합 피드백(get_consolidate_feedback): ", consolidated_feedback)
+            print("통합 피드백(main.py): ", consolidated_feedback)
             return JSONResponse(content={
                 "status": "success",
                 "consolidated_feedback": consolidated_feedback

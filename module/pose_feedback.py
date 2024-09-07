@@ -21,29 +21,24 @@ def analyze_pose_movement(pose_results):
 
     # 결과에서 포즈 랜드마크를 가져오기
     pose_landmarks = pose_results.pose_landmarks
-    # hands_landmarks = hands_results.multi_hand_landmarks
 
     if pose_landmarks:
         print("포즈 랜드마크가 사용 가능하고 유효합니다.")
     else:
         print("포즈 랜드마크를 사용할 수 없거나 유효하지 않습니다.")
 
-    # if hands_landmarks:
-    #     print("손 랜드마크가 사용 가능하고 유효합니다.")
-    # else:
-    #     print("손 랜드마크를 사용할 수 없거나 유효하지 않습니다.")
-
     if pose_landmarks:
         feedback_list = analyze_landmarks(pose_landmarks)
-        print("개별 피드백(feedback_list): " + "".join(feedback_list))
         feedback = get_feedback_from_llm(feedback_list)
+        consolidated_feedback = consolidate_feedback(feedback_list)
     else:
         feedback = "포즈와 손을 감지할 수 없습니다."
 
-    print("개별 피드백(feedback): " + "".join(feedback))
-
+    print("행동 감지(pose_feedback.py): " + "".join(feedback_list))
+    print("개별 피드백(pose_feedback.py): " + "".join(feedback))
     return feedback
 
+# 각 영상 피드백
 def get_feedback_from_llm(feedback_list):
     # 데이터를 텍스트로 변환
     user_prompt = "\n".join(feedback_list)
@@ -74,6 +69,7 @@ def get_feedback_from_llm(feedback_list):
     # 피드백 적재
     return completion.choices[0].message.content
 
+# 최종 피드백
 def consolidate_feedback(feedback_list):
     # 피드백 리스트를 종합하여 최종 피드백 생성
     user_prompt = "".join(feedback_list)
