@@ -30,12 +30,14 @@ def generateQ(job, years, pdf_file=None, max_retries=3):
     - User role: {job}
 
     # Instructions
-    - Generate 2 technical questions based on the user's role and experience level.
+    - Generate 50 unique (non-duplicate) technical questions based on the user's role and experience level.
     - Ensure that questions are relevant, clear, and focused on assessing technical knowledge.
     - Questions should be answerable through verbal explanation.
     - Write your questions in Korean only.
     - Construct questions at a level appropriate for the years of experience provided.
     - Do not ask for code examples.
+    - Randomly choose 2 out of 50 questions you created
+    - Output only the selected 2 questions.
 
     # Output Format
     You must strictly adhere to the following JSON format:
@@ -58,17 +60,21 @@ def generateQ(job, years, pdf_file=None, max_retries=3):
     There are two main tasks:
 
     ## Task 1: General Technical Questions
-    1. Create 2 technical questions based on the user's role ({job}) and experience level ({years} years).
+    1. Generate 50 unique (non-duplicate) technical questions based on the user's role ({job}) and experience level ({years} years).
+    2. Randomly choose 2 questions from the 50 you created.
     2. These questions should be independent of the resume content.
 
     ## Task 2: Resume-Based Technical Questions
-    1. Create 2 additional technical questions based on the resume content.
+    1. Generate 50 unique (non-duplicate) technical questions based on the resume content.
     2. Focus these questions on specific projects, technologies, or experiences mentioned in the resume.
+    3. Select a project from the resume that is related to the user's role ({job}) and create two technical questions based on that project.
+    4. Randomly choose 2 questions from the 50 you created.
+    5. If the resume includes experiences that do not match the user's role ({job}), ignore them and choose projects and technologies that align with the given role.
 
     # Instructions
     - Generate a total of 4 questions:
-        - 2 questions based on the user's role and experience level (Task 1).
-        - 2 additional questions based on the resume content (Task 2).
+        - 2 questions from Task 1 (general questions based on the user's role and experience level).
+        - 2 additional questions from Task 2 (resume-based questions).
     - Ensure that questions from Task 1 are not influenced by the resume content.
     - Questions should be relevant, clear, and focused on assessing technical knowledge.
     - Questions should be answerable through verbal explanation.
@@ -98,7 +104,7 @@ def generateQ(job, years, pdf_file=None, max_retries=3):
                         {"role": "system", "content": "You are the interviewer, you are a professional developer. You must always respond in the specified JSON format."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0
+                    temperature=0.5
                 )
                 response_content = completion.choices[0].message.content
                 questions = json.loads(response_content)

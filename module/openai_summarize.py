@@ -30,22 +30,22 @@ def summarize_text(evaluations):
     You are an expert interviewer evaluating technical responses. The interviewee is the candidate whose responses you are evaluating.
 
     # Task
-    - Review the following technical evaluation content:
-
-    {evaluation_items_text}
-
-    - Based on the evaluation content, write a technical interview assessment in 5 lines or less.
-    - The assessment should be concise and provide a summary of the candidate's performance.
+    - Review the following technical evaluation content: {evaluation_items_text}
+    - Based on the technical evaluation content, write a summary of the technical interview assessment in 5 lines or less.
+    - The evaluation should be concise while providing clear and specific reasons.
+    - Provide the summary as a comprehensive evaluation, without dividing it into individual assessments.
 
     # Policy
     - Ensure the assessment is clear and focused on the technical content.
     - Do not include personal opinions or unrelated information.
     - Keep the response within 5 lines, providing a summary of the evaluation.
     - Provide all information and responses only in Korean.
-
+    - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
+    - The summary should be provided as a single cohesive assessment, without breaking it down into individual evaluations.
+  
     # Output Format
     {{
-        "총평": "the assessment is here"
+        ""
     }}
     """
     
