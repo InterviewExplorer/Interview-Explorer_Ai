@@ -95,11 +95,20 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
 
+    """ 
+        포즈 사용하려면 아래 코드 주석 해제하기
+        1.  feedback = analyze_pose_movement(pose_results)
+        2.  if feedback:
+                feedback_list.extend(feedback)
+        3. final_feedback = "".join(feedback_list)
+        4. return final_feedback
+     """
+    
     # 포즈 분석 및 피드백 수집
-    feedback = analyze_pose_movement(pose_results)
+    # feedback = analyze_pose_movement(pose_results)
 
-    if feedback:
-        feedback_list.extend(feedback)
+    # if feedback:
+    #     feedback_list.extend(feedback)
 
     # 자원 해제
     cap.release()
@@ -109,6 +118,6 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     os.remove(temp_webm_path)
 
     # 최종 피드백 출력
-    final_feedback = "".join(feedback_list)
+    # final_feedback = "".join(feedback_list)
 
-    return final_feedback
+    # return final_feedback

@@ -1,6 +1,6 @@
 import math
 
-def analyze_landmarks(pose_landmarks, hands_landmarks=None):
+def analyze_landmarks(pose_landmarks):
     
     print("포즈 랜드마크 실행 중...")
     feedback_list = []
