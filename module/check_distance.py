@@ -1,9 +1,9 @@
 import math
 
-def analyze_landmarks(pose_landmarks):
+def analyze_landmarks(pose_landmarks, hands_landmarks=None):
     
     print("포즈 랜드마크 실행 중...")
-    feedback_list = [""]
+    feedback_list = []
 
     # 유클리드 거리 계산
     def euclidean_distance(point1, point2):
@@ -14,7 +14,7 @@ def analyze_landmarks(pose_landmarks):
     if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[9].visibility > 0.5:
         distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[9])
         print("왼손과 턱 사이의 거리: ", distance)
-        if distance < 0.7:
+        if distance < 2:
             print("왼손이 턱에 기댄 습관이 있습니다.")
             feedback_list.append("왼손이 턱에 기댄 습관이 있습니다.")
         else:
@@ -71,7 +71,7 @@ def analyze_landmarks(pose_landmarks):
     if pose_landmarks.landmark[19].visibility > 0.5 and (pose_landmarks.landmark[9].visibility > 0.5 or pose_landmarks.landmark[10].visibility > 0.5):
         distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[9])
         print("왼손과 입 사이의 거리: ", distance)
-        if distance < 0.7:
+        if distance < 1.5:
             print("왼손으로 입을 만지는 습관이 있습니다.")
             feedback_list.append("왼손으로 입을 만지는 습관이 있습니다.")
         else:

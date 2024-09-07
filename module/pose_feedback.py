@@ -35,9 +35,12 @@ def analyze_pose_movement(pose_results):
 
     if pose_landmarks:
         feedback_list = analyze_landmarks(pose_landmarks)
+        print("개별 피드백(feedback_list): " + "".join(feedback_list))
         feedback = get_feedback_from_llm(feedback_list)
     else:
         feedback = "포즈와 손을 감지할 수 없습니다."
+
+    print("개별 피드백(feedback): " + "".join(feedback))
 
     return feedback
 
