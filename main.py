@@ -19,6 +19,9 @@ import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
 from module.pose_feedback import consolidate_feedback
+from module.openai_speaking import evaluate_speaking
+from module import openai_behavioral
+# from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
 @app.get("/")
@@ -142,6 +145,36 @@ async def create_upload_file(
             
     return JSONResponse(content=result)
 
+@app.post("/generateQ_behavioral/")
+async def create_upload_file_behavioral(
+    job: str = Form(...),
+    years: str = Form(...),
+    file: UploadFile = File(None)
+):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    pdf_content = None
+    if file:
+        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
+            pdf_content = temp_file.name
+
+    print(f"직업군: {job}, 연차: {years}")
+    if pdf_content:
+        print(f"PDF 파일 저장 경로: {pdf_content}")
+
+    result = openai_behavioral.generateQ_behavioral(job, years, pdf_content)
+
+    # PDF 파일 삭제
+    if pdf_content:
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+            
+    return JSONResponse(content=result)
 
 @app.post("/ai-presenter")
 async def ai_presenter(request: Request):
@@ -165,6 +198,7 @@ class UserInfo(BaseModel):
     years: str
     answer: str
     questions: dict
+    type: str
 
 @app.post("/follow_question")
 async def follow_question(userinfo: UserInfo):
@@ -172,12 +206,13 @@ async def follow_question(userinfo: UserInfo):
     years = userinfo.years
     answer = userinfo.answer
     questions = userinfo.questions
+    type = userinfo.type
 
     if not answer or not years or not job:
         raise HTTPException(status_code=400, detail="직업, 경력, 답변은 필수 항목입니다.")
 
     try:
-        followQuestion = follow_Q(answer, years, job, questions)
+        followQuestion = follow_Q(answer, years, job, questions, type)
         return JSONResponse(content=followQuestion)
     
     except Exception as e:
@@ -188,6 +223,7 @@ class EvaluateRequest(BaseModel):
     answer: str
     years: str
     job: str
+    type: str
 
 @app.post("/evaluate")
 async def evaluate(request: EvaluateRequest):
@@ -196,13 +232,14 @@ async def evaluate(request: EvaluateRequest):
     answer = request.answer
     years = request.years
     job = request.job
+    type = request.type
 
     if not question or not answer or not years or not job:
         raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
     
     try:
         # 답변 평가
-        evaluation = evaluate_answer(question, answer, years, job)
+        evaluation = evaluate_answer(question, answer, years, job, type)
         return JSONResponse(content={"evaluation": evaluation})
     
     except Exception as e:
@@ -212,12 +249,25 @@ async def evaluate(request: EvaluateRequest):
 # 데이터 모델 정의
 class EvaluationData(BaseModel):
     evaluations: dict
+    type: str
 
 @app.post("/summarize")
 async def summarize(data: EvaluationData):
     try:
-        summary = summarize_text(data.evaluations)
+        summary = summarize_text(data.evaluations, data.type)
         return JSONResponse(content=summary)
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AnswersInput(BaseModel):
+    answers: Dict[str, str]
+    
+@app.post("/speaking")
+async def speaking(input: AnswersInput):
+    print("@@@@Answers", input.answers)
+    try:
+        evaluation = evaluate_speaking(input.answers)
+        return evaluation
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
