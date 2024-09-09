@@ -28,9 +28,20 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     ]
     subprocess.run(command, check=True)
 
+    # BlazePose 복잡도 선택, 명시하지 않으면 디폴트 값 1
+    MODEL_COMPLEXITY = {
+        "LITE": 0,
+        "FULL": 1,
+        "HEAVY": 2
+    }
+
     # MediaPipe 포즈 모듈 초기화
     mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    pose = mp_pose.Pose(
+        model_complexity=MODEL_COMPLEXITY["LITE"],
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
     mp_drawing = mp.solutions.drawing_utils
 
     # 비디오 파일을 열기
@@ -74,9 +85,9 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
             )
 
         # 결과를 화면에 표시
-        # cv2.imshow('Pose Detection', frame)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
+        cv2.imshow('Pose Detection', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
     
     # 포즈 분석 및 피드백 수집
     feedback = analyze_pose_movement(pose_results)

@@ -1,115 +1,199 @@
 import math
 
 def analyze_landmarks(pose_landmarks):
+
+    # 얼굴
+    nose = pose_landmarks.landmark[0]
+    left_eye = pose_landmarks.landmark[2]
+    right_eye = pose_landmarks.landmark[5]
+    left_ear = pose_landmarks.landmark[7]
+    right_ear = pose_landmarks.landmark[8]
+    mouth_left = pose_landmarks.landmark[9]
+    mouth_right = pose_landmarks.landmark[10]
+
+    # 왼쪽 상체
+    left_shoulder = pose_landmarks.landmark[11]
+    left_elbow = pose_landmarks.landmark[13]
+    left_wrist = pose_landmarks.landmark[15]
+    left_pinky = pose_landmarks.landmark[17]
+    left_index = pose_landmarks.landmark[19]
+    left_thumb = pose_landmarks.landmark[21]
+
+    # 오른쪽 상체
+    right_shoulder = pose_landmarks.landmark[12]
+    right_elbow = pose_landmarks.landmark[14]
+    right_wrist = pose_landmarks.landmark[16]
+    right_pinky = pose_landmarks.landmark[18]
+    right_index = pose_landmarks.landmark[20]
+    right_thumb = pose_landmarks.landmark[22]
+
+    # 얼굴 중심 좌표
+    center_x = (left_ear.x + right_ear.x) / 2
+    center_z = (left_ear.z + right_ear.z + left_eye.z + right_eye.z + mouth_left.z + mouth_right.z) / 6
+    eyes_y = (left_eye.y + right_eye.y) / 2
+    mouth_y = (mouth_left.y + mouth_right.y) / 2
+    center_y = (eyes_y + mouth_y) / 2
+    visibility = (left_ear.visibility + right_ear.visibility +
+                  left_eye.visibility + right_eye.visibility +
+                  mouth_left.visibility + mouth_right.visibility) / 6
+
+    face_center = (center_x, center_y, center_z, visibility)
     
-    print("포즈 랜드마크 실행 중...")
     feedback_list = []
 
-    # 유클리드 거리 계산
-    def euclidean_distance(point1, point2):
-        print("유클리드 거리 계산 중...")
-        return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2 + (point1.z - point2.z) ** 2)
+    if right_wrist.visibility > 0.5:
+        print(f"오른손을 탐지했습니다. 오른손 visibility: {right_wrist.visibility:.2f}")
+        print(f"오른손 x: {right_wrist.x:.2f}, y: {right_wrist.y:.2f}, z: {right_wrist.z:.2f}")
+    else:
+        print("오른손을 탐지하지 못했습니다.")
+
+    if left_wrist.visibility > 0.5:
+        print(f"왼손을 탐지했습니다. 왼손 visibility: {left_wrist.visibility:.2f}")
+        print(f"왼손 x: {left_wrist.x:.2f}, y: {left_wrist.y:.2f}, z: {left_wrist.z:.2f}")
+    else:
+        print("왼손을 탐지하지 못했습니다.")
+
+    if face_center[3] > 0.5:
+        print(f"얼굴 중심을 탐지했습니다. 얼굴 중심 visibility: {face_center[3]:.2f}")
+        print(f"얼굴 중심 x: {face_center[0]:.2f}, y: {face_center[1]:.2f}, z: {face_center[2]:.2f}")
+    else:
+        print("얼굴 중심을 탐지하지 못했습니다.")
+
+    # 유클리드 거리 계산 3D
+    def euclidean_distance_3d(point1, point2):
+        return math.sqrt((point1.x - point2[0]) ** 2 + (point1.y - point2[1]) ** 2 + (point1.z - point2[2]) ** 2)
     
+    # 유클리드 거리 계산 2D
+    def euclidean_distance_2d(point1, point2):
+        return math.sqrt((point1.x - point2[0]) ** 2 + (point1.y - point2[1]) ** 2)
+
+    # 손이 얼굴 범위안에 들어올 경우
+    if left_wrist.visibility > 0.5 and face_center[3] > 0.9 or \
+        right_wrist.visibility > 0.5 and face_center[3] > 0.9:
+        print("손이 얼굴 범위안에 들어올 경우 조건문 실행중...")
+        if left_wrist.visibility > 0.5 and face_center[3] > 0.9 and left_wrist.z > -2:
+            distance = euclidean_distance_2d(left_wrist, face_center)
+            print(f"왼손과 얼굴 중심 사이의 2D 거리: {distance:.2f}")
+            if distance < 0.3:
+                feedback_list.append("왼손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+                print("왼손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+        elif left_wrist.visibility > 0.5 and face_center[3] > 0.9 and left_wrist.z < -2:
+            feedback_list.append("왼손이 산만하게 움직이고 있습니다.")
+            print("왼손이 산만하게 움직이고 있습니다.")
+
+        if right_wrist.visibility > 0.5 and face_center[3] > 0.9 and right_wrist.z > -2.3:
+            distance = euclidean_distance_2d(right_wrist, face_center)
+            print(f"오른손과 얼굴 중심 사이의 2D 거리: {distance:.2f}")
+            if distance < 0.3:
+                feedback_list.append("오른손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+                print("오른손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+        elif right_wrist.visibility > 0.5 and face_center[3] > 0.9 and right_wrist.z < -2.3:
+            feedback_list.append("오른손이 산만하게 움직이고 있습니다.")
+            print("오른손이 산만하게 움직이고 있습니다.")
+
     # 손을 턱에 기댄 경우
-    if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[9].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[9])
-        print("왼손과 턱 사이의 거리: ", distance)
-        if distance < 2:
-            feedback_list.append("왼손이 턱에 기댄 습관이 있습니다.")
+    # if left_wrist.visibility > 0.5 and face_center[3] > 0.5:
+    #     distance = euclidean_distance_2d(left_wrist, face_center)
+    #     print(f"왼손과 턱 사이의 XY 평면 거리: {distance:.2f}")
+    #     if distance < 0.35:
+    #         feedback_list.append("왼손이 턱 근처에 있습니다. 턱을 만지는 습관이 있을 수 있습니다.")
+    #         print("왼손이 턱 근처에 있습니다.")
 
-    if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[10].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[10])
-        print("오른손과 턱 사이의 거리: ", distance)
-        if distance < 1.5:
-            feedback_list.append("오른손이 턱에 기댄 습관이 있습니다.")
-
+    # if right_wrist.visibility > 0.5 and face_center[3] > 0.5:
+    #     distance = euclidean_distance_2d(right_wrist, face_center)
+    #     print(f"오른손과 턱 사이의 XY 평면 거리: {distance:.2f}")
+    #     if distance < 0.35:
+    #         feedback_list.append("오른손이 턱 근처에 있습니다. 턱을 만지는 습관이 있을 수 있습니다.")
+    #         print("오른손이 턱 근처에 있습니다.")
+            
     # 손으로 코를 만지는 경우
-    if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[0].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[0])
-        print("왼손과 코 사이의 거리: ", distance)
-        if distance < 0.5:
-            feedback_list.append("왼손으로 코를 만지는 습관이 있습니다.")
+    # if left_index.visibility > 0.5 and nose.visibility > 0.5:
+    #     distance = euclidean_distance(left_index, nose)
+    #     print(f"왼손과 코 사이의 XY 평면 거리: {distance:.2f}")
+    #     if distance < 0.6:
+    #         feedback_list.append("왼손이 코 근처에 있습니다. 코를 만지는 습관이 있을 수 있습니다.")
+    #         print("왼손이 코 근처에 있습니다.")
 
-    if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[0].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[0])
-        print("오른손과 코 사이의 거리: ", distance)
-        if distance < 1.5:
-            feedback_list.append("오른손으로 코를 만지는 습관이 있습니다.")
+    # if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[0].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[0])
+    #     print("오른손과 코 사이의 거리: ", distance)
+    #     if distance < 1.5:
+    #         feedback_list.append("오른손으로 코를 만지는 습관이 있습니다.")
     
-    # 손으로 눈을 만지는 경우
-    if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[1].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[1])
-        print("왼손과 왼쪽 눈 사이의 거리: ", distance)
-        if distance < 0.5:
-            feedback_list.append("왼손으로 눈을 만지는 습관이 있습니다.")
+    # # 손으로 눈을 만지는 경우
+    # if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[1].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[1])
+    #     print("왼손과 왼쪽 눈 사이의 거리: ", distance)
+    #     if distance < 0.5:
+    #         feedback_list.append("왼손으로 눈을 만지는 습관이 있습니다.")
 
-    if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[1].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[1])
-        print("오른손과 오른쪽 눈 사이의 거리: ", distance)
-        if distance < 1.5:
-            feedback_list.append("오른손으로 눈을 만지는 습관이 있습니다.")
+    # if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[1].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[1])
+    #     print("오른손과 오른쪽 눈 사이의 거리: ", distance)
+    #     if distance < 1.5:
+    #         feedback_list.append("오른손으로 눈을 만지는 습관이 있습니다.")
 
-    # 손으로 입을 만지는 경우
-    if pose_landmarks.landmark[19].visibility > 0.5 and (pose_landmarks.landmark[9].visibility > 0.5 or pose_landmarks.landmark[10].visibility > 0.5):
-        distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[9])
-        print("왼손과 입 사이의 거리: ", distance)
-        if distance < 1.5:
-            feedback_list.append("왼손으로 입을 만지는 습관이 있습니다.")
+    # # 손으로 입을 만지는 경우
+    # if pose_landmarks.landmark[19].visibility > 0.5 and (pose_landmarks.landmark[9].visibility > 0.5 or pose_landmarks.landmark[10].visibility > 0.5):
+    #     distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[9])
+    #     print("왼손과 입 사이의 거리: ", distance)
+    #     if distance < 1.5:
+    #         feedback_list.append("왼손으로 입을 만지는 습관이 있습니다.")
 
-    if pose_landmarks.landmark[20].visibility > 0.5 and (pose_landmarks.landmark[9].visibility > 0.5 or pose_landmarks.landmark[10].visibility > 0.5):
-        distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[9])
-        print("오른손과 입 사이의 거리: ", distance)
-        if distance < 1.5:
-            feedback_list.append("오른손으로 입을 만지는 습관이 있습니다.")
+    # if pose_landmarks.landmark[20].visibility > 0.5 and (pose_landmarks.landmark[9].visibility > 0.5 or pose_landmarks.landmark[10].visibility > 0.5):
+    #     distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[9])
+    #     print("오른손과 입 사이의 거리: ", distance)
+    #     if distance < 1.5:
+    #         feedback_list.append("오른손으로 입을 만지는 습관이 있습니다.")
 
-    # 팔짱을 낀 경우
-    if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[14].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[14])
-        print("왼손과 오른쪽 팔꿈치 사이의 거리: ", distance)
-        if distance < 1:
-            feedback_list.append("왼손이 팔짱을 낀 습관이 있습니다.")
+    # # 팔짱을 낀 경우
+    # if pose_landmarks.landmark[19].visibility > 0.5 and pose_landmarks.landmark[14].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[19], pose_landmarks.landmark[14])
+    #     print("왼손과 오른쪽 팔꿈치 사이의 거리: ", distance)
+    #     if distance < 1:
+    #         feedback_list.append("왼손이 팔짱을 낀 습관이 있습니다.")
 
-    if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[13].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[13])
-        print("오른손과 왼쪽 팔꿈치 사이의 거리: ", distance)
-        if distance < 1:
-            feedback_list.append("오른손이 팔짱을 낀 습관이 있습니다.")
+    # if pose_landmarks.landmark[20].visibility > 0.5 and pose_landmarks.landmark[13].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[20], pose_landmarks.landmark[13])
+    #     print("오른손과 왼쪽 팔꿈치 사이의 거리: ", distance)
+    #     if distance < 1:
+    #         feedback_list.append("오른손이 팔짱을 낀 습관이 있습니다.")
 
-    # 긴장한 자세(오른쪽)
-    if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[12].y < 0.7:
-        feedback_list.append("오른쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
+    # # 긴장한 자세(오른쪽)
+    # if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[12].y < 0.7:
+    #     feedback_list.append("오른쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
 
-    # 긴장한 자세(왼쪽)
-    if pose_landmarks.landmark[11].visibility > 0.5 and pose_landmarks.landmark[11].y > 1:
-        feedback_list.append("왼쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
+    # # 긴장한 자세(왼쪽)
+    # if pose_landmarks.landmark[11].visibility > 0.5 and pose_landmarks.landmark[11].y > 1:
+    #     feedback_list.append("왼쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
 
-    # 긴장한 자세(양쪽)
-    if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[11].visibility > 0.5:
-        distance = euclidean_distance(pose_landmarks.landmark[12], pose_landmarks.landmark[11])
-        print("오른쪽 어깨와 왼쪽 어깨 위치: ", distance)
-        if distance < 0.5:
-            feedback_list.append("양쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
+    # # 긴장한 자세(양쪽)
+    # if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[11].visibility > 0.5:
+    #     distance = euclidean_distance(pose_landmarks.landmark[12], pose_landmarks.landmark[11])
+    #     print("오른쪽 어깨와 왼쪽 어깨 위치: ", distance)
+    #     if distance < 0.5:
+    #         feedback_list.append("양쪽 어깨가 너무 올라가있어 긴장한 습관이 있습니다.")
 
-    # 자신감이 없어 보이는 자세
-    if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[12].y < 0.7:
-        feedback_list.append("오른쪽 어깨가 너무 내려가있어 자신감이 없어보이는 습관이 있습니다.")
+    # # 자신감이 없어 보이는 자세
+    # if pose_landmarks.landmark[12].visibility > 0.5 and pose_landmarks.landmark[12].y < 0.7:
+    #     feedback_list.append("오른쪽 어깨가 너무 내려가있어 자신감이 없어보이는 습관이 있습니다.")
 
-    if pose_landmarks.landmark[11].visibility > 0.5 and pose_landmarks.landmark[11].y < 0.7:
-        feedback_list.append("왼쪽 어깨가 너무 내려가있어 자신감이 없어보이는 습관이 있습니다.")
+    # if pose_landmarks.landmark[11].visibility > 0.5 and pose_landmarks.landmark[11].y < 0.7:
+    #     feedback_list.append("왼쪽 어깨가 너무 내려가있어 자신감이 없어보이는 습관이 있습니다.")
 
-    # 자신감이 없어보이거나 피곤해 보이는 자세
-    if pose_landmarks.landmark[0].visibility > 0.5 and pose_landmarks.landmark[0].y < 0.3:
-        feedback_list.append("고개가 너무 숙여져있어 피곤해 보이는 습관이 있습니다.")
+    # # 자신감이 없어보이거나 피곤해 보이는 자세
+    # if pose_landmarks.landmark[0].visibility > 0.5 and pose_landmarks.landmark[0].y < 0.3:
+    #     feedback_list.append("고개가 너무 숙여져있어 피곤해 보이는 습관이 있습니다.")
 
-    # 오만하거나 무례해 보이는 자세
-    if pose_landmarks.landmark[0].visibility > 0.5 and pose_landmarks.landmark[0].y > 0.7:
-        feedback_list.append("고개가 너무 들어있어 오만하거나 무례해 보이는 습관이 있습니다.")
+    # # 오만하거나 무례해 보이는 자세
+    # if pose_landmarks.landmark[0].visibility > 0.5 and pose_landmarks.landmark[0].y > 0.7:
+    #     feedback_list.append("고개가 너무 들어있어 오만하거나 무례해 보이는 습관이 있습니다.")
 
-    # 상체가 앞으로 쏠린 경우
-    if (pose_landmarks.landmark[11].z > 0.3) and \
-       (pose_landmarks.landmark[12].z > 0.3) and \
-       (pose_landmarks.landmark[0].z > 0.3):
-        feedback_list.append("상체가 앞으로 쏠려 피곤해 보이거나 집중하지 않는 상태입니다.")
+    # # 상체가 앞으로 쏠린 경우
+    # if (pose_landmarks.landmark[11].z > 0.3) and \
+    #    (pose_landmarks.landmark[12].z > 0.3) and \
+    #    (pose_landmarks.landmark[0].z > 0.3):
+    #     feedback_list.append("상체가 앞으로 쏠려 피곤해 보이거나 집중하지 않는 상태입니다.")
 
     return feedback_list
     
