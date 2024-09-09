@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import json
 import time
+from typing import Dict
 
 load_dotenv()
 
@@ -16,13 +17,17 @@ if gpt_model is None:
 
 client = OpenAI(api_key=api_key)
 
-def evaluate_speaking(text: str) -> dict:
+def evaluate_speaking(answers: Dict[str, str]) -> dict:
+    # 모든 답변을 하나의 문자열로 결합
+    combined_text = " ".join(answers.values())
+    print("combined_text", combined_text)
+
     prompt = f"""
     # Role
     You are an interviewer specializing in evaluating language habits and speaking style.
 
     # Task
-    - Evaluate the language-related aspects in {text}.
+    - Evaluate the language-related aspects in the ({combined_text}).
     - Check for the use of meaningless words (e.g., "um," "uh") and the presence of repeated words.
     - Provide specific feedback on the interviewee's language habits and speaking style.
     - Ensure that all instances of meaningless words (e.g., "um") are accurately identified.
@@ -32,17 +37,18 @@ def evaluate_speaking(text: str) -> dict:
     # Policy
     - Keep the response within 5 lines, providing a summary of the evaluation.
     - Provide all information and responses only in Korean.
-    - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
+    - Responses must be in JSON format.
+    - Place the evaluation in the `speaking` value of the JSON output.
+    - Do not include titles or other additional descriptions.
 
     # Output Format
-    {
-        ""
-    }
+    {{
+        "speaking": ""
+    }}
     """
 
     max_retries = 3
     for attempt in range(max_retries):
-        
         try:
             completion = client.chat.completions.create(
                 model=gpt_model,
@@ -55,7 +61,9 @@ def evaluate_speaking(text: str) -> dict:
             )
             
             response_content = completion.choices[0].message.content
-            return response_content
+            result = json.loads(response_content)
+            
+            return result
         
         except json.JSONDecodeError as e:
             print(f"JSON 파싱 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")

@@ -20,7 +20,9 @@ if gpt_model is None:
 # OpenAI 클라이언트 초기화 및 api키 등록
 client = OpenAI(api_key=api_key)
 
-def summarize_text(evaluations):
+def summarize_text(evaluations, type):
+    print("@@@@@@@@type", type)
+    
     # 평가 내용을 문자열로 변환
     evaluation_items = [f"평가 {i+1}: {evaluation}" for i, evaluation in enumerate(evaluations.values())]
     evaluation_items_text = '\n'.join(evaluation_items)
