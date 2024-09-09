@@ -54,7 +54,7 @@ def evaluate_answer(question: str, answer: str, years: str, job: str, type: str)
     elif type == "behavioral":
         prompt = f"""
         # Role
-        You are a technical interviewer with expertise in conducting interviews.
+        You are an expert interviewer specializing in evaluating interpersonal aspects.
 
         # Task    
         1. From an interpersonal interviewer’s perspective, explain the intention of ({question}) in 3 sentences or less.
