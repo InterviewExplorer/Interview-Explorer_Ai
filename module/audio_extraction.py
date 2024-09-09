@@ -3,18 +3,17 @@ import io
 import os
 import cv2
 import mediapipe as mp
-from module.pose_feedback import analyze_pose_movement
+from module.check_distance import analyze_video_landmarks
 
 def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     """
-    메모리에서 webm 파일을 mp3 형식으로 변환합니다.
-    
+    메모리에서 webm 파일을 mp3 형식으로 변환하고 포즈를 분석합니다.
     :param webm_file: 메모리에서의 webm 파일
     :param mp3_path: 변환할 mp3 파일의 경로
+    :return: 중복이 제거된 포즈 분석 피드백
     """
     # 웹엠 파일을 임시로 저장할 폴더 확인
     temp_webm_path = 'audio/temp_video.webm'
-
     # 웹엠 파일을 임시로 저장
     with open(temp_webm_path, 'wb') as temp_file:
         temp_file.write(webm_file.read())
@@ -28,10 +27,20 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     ]
     subprocess.run(command, check=True)
 
+    # BlazePose 복잡도 선택, 명시하지 않으면 디폴트 값 1
+    MODEL_COMPLEXITY = {
+        "LITE": 0,
+        "FULL": 1,
+        "HEAVY": 2
+    }
+
     # MediaPipe 포즈 모듈 초기화
     mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-    mp_drawing = mp.solutions.drawing_utils
+    pose = mp_pose.Pose(
+        model_complexity=MODEL_COMPLEXITY["LITE"],
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
 
     # 비디오 파일을 열기
     cap = cv2.VideoCapture(temp_webm_path)
@@ -40,7 +49,7 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     if not cap.isOpened():
         raise ValueError("비디오 파일을 열 수 없습니다. 파일 경로를 확인해주세요.")
 
-    feedback_list = []
+    all_pose_results = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -54,46 +63,23 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         rgb_frame.flags.writeable = False
 
         # 포즈 추정 수행
-        results = pose.process(rgb_frame)
+        pose_results = pose.process(rgb_frame)
 
-        # 편집기능 다시 켜기
-        rgb_frame.flags.writeable = True
-
-        # RGB 이미지를 BGR로 다시 변환 (OpenCV 사용을 위해)
-        frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
-
-        # 랜드마크가 감지되었는지 확인 후 그리기
-        if results.pose_landmarks:
-            # 랜드마크와 연결선 그리기
-            mp_drawing.draw_landmarks(
-                frame,
-                results.pose_landmarks,
-                mp_pose.POSE_CONNECTIONS,
-                mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2), # 랜드마크 스타일
-                mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2) # 연결선 스타일
-            )
-
-        # 결과를 화면에 표시
-        # cv2.imshow('Pose Detection', frame)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
-
-    # 포즈 분석 및 피드백 수집
-    feedback = analyze_pose_movement(results)
-    # print("feeddback_type: " + type(feedback))
-
-    if feedback:
-        feedback_list.extend(feedback)
+        # 포즈 결과 저장 (랜드마크가 감지된 경우에만)
+        if pose_results.pose_landmarks:
+            all_pose_results.append(pose_results.pose_landmarks)
 
     # 자원 해제
     cap.release()
-    cv2.destroyAllWindows()
-    
+
     # 임시 파일 삭제
     os.remove(temp_webm_path)
 
-    # 최종 피드백 출력
-    final_feedback = "".join(feedback_list)
-    # print("최종 피드백: ", final_feedback)
+    # 전체 비디오에 대한 포즈 분석 및 중복 제거된 피드백 수집
+    feedback_set = set(analyze_video_landmarks(all_pose_results))
 
+    # 최종 피드백 출력 (중복 제거됨)
+    final_feedback = "\n".join(feedback_set)
+
+    print("결과아아아아ㅏ아아아아아아", final_feedback)
     return final_feedback
