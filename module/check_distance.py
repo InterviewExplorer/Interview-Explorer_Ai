@@ -40,28 +40,6 @@ def analyze_landmarks(pose_landmarks):
     face_center = (center_x, center_y, center_z, visibility)
     
     feedback_list = []
-
-    if right_wrist.visibility > 0.5:
-        print(f"오른손을 탐지했습니다. 오른손 visibility: {right_wrist.visibility:.2f}")
-        print(f"오른손 x: {right_wrist.x:.2f}, y: {right_wrist.y:.2f}, z: {right_wrist.z:.2f}")
-    else:
-        print("오른손을 탐지하지 못했습니다.")
-
-    if left_wrist.visibility > 0.5:
-        print(f"왼손을 탐지했습니다. 왼손 visibility: {left_wrist.visibility:.2f}")
-        print(f"왼손 x: {left_wrist.x:.2f}, y: {left_wrist.y:.2f}, z: {left_wrist.z:.2f}")
-    else:
-        print("왼손을 탐지하지 못했습니다.")
-
-    if face_center[3] > 0.5:
-        print(f"얼굴 중심을 탐지했습니다. 얼굴 중심 visibility: {face_center[3]:.2f}")
-        print(f"얼굴 중심 x: {face_center[0]:.2f}, y: {face_center[1]:.2f}, z: {face_center[2]:.2f}")
-    else:
-        print("얼굴 중심을 탐지하지 못했습니다.")
-
-    # 유클리드 거리 계산 3D
-    def euclidean_distance_3d(point1, point2):
-        return math.sqrt((point1.x - point2[0]) ** 2 + (point1.y - point2[1]) ** 2 + (point1.z - point2[2]) ** 2)
     
     # 유클리드 거리 계산 2D
     def euclidean_distance_2d(point1, point2):
@@ -74,7 +52,7 @@ def analyze_landmarks(pose_landmarks):
         if left_wrist.visibility > 0.5 and face_center[3] > 0.9 and left_wrist.z > -2:
             distance = euclidean_distance_2d(left_wrist, face_center)
             print(f"왼손과 얼굴 중심 사이의 2D 거리: {distance:.2f}")
-            if distance < 0.3:
+            if distance < 0.25:
                 feedback_list.append("왼손이 얼굴을 만지는 습관이 있을 수 있습니다.")
                 print("왼손이 얼굴을 만지는 습관이 있을 수 있습니다.")
         elif left_wrist.visibility > 0.5 and face_center[3] > 0.9 and left_wrist.z < -2:
@@ -84,7 +62,7 @@ def analyze_landmarks(pose_landmarks):
         if right_wrist.visibility > 0.5 and face_center[3] > 0.9 and right_wrist.z > -2.3:
             distance = euclidean_distance_2d(right_wrist, face_center)
             print(f"오른손과 얼굴 중심 사이의 2D 거리: {distance:.2f}")
-            if distance < 0.3:
+            if distance < 0.25:
                 feedback_list.append("오른손이 얼굴을 만지는 습관이 있을 수 있습니다.")
                 print("오른손이 얼굴을 만지는 습관이 있을 수 있습니다.")
         elif right_wrist.visibility > 0.5 and face_center[3] > 0.9 and right_wrist.z < -2.3:
@@ -196,4 +174,17 @@ def analyze_landmarks(pose_landmarks):
     #     feedback_list.append("상체가 앞으로 쏠려 피곤해 보이거나 집중하지 않는 상태입니다.")
 
     return feedback_list
+
+def analyze_video_landmarks(pose_landmarks_sequence):
+    feedback_set = set()
+    frame_count = len(pose_landmarks_sequence)
+
+    for frame, pose_landmarks in enumerate(pose_landmarks_sequence):
+        frame_feedback = analyze_landmarks(pose_landmarks)
+        feedback_set.update(frame_feedback)
+
+    return list(feedback_set)
+
+# 이 파일의 끝에 다음 줄 추가
+__all__ = ['analyze_landmarks', 'analyze_video_landmarks']
     
