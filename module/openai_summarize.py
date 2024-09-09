@@ -42,6 +42,7 @@ def summarize_text(evaluations, type):
         - Provide all information and responses only in Korean.
         - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
         - The summary should be provided as a single cohesive assessment, without breaking it down into individual evaluations.
+        - Refer to users as '면접자'.
     
         # Output Format
         {{
@@ -66,8 +67,8 @@ def summarize_text(evaluations, type):
         - Provide all information and responses only in Korean.
         - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
         - The summary should be provided as a single cohesive assessment, without breaking it down into individual evaluations.
+        - Refer to users as '면접자'.
     
-
         # Output Format
         {{
             ""

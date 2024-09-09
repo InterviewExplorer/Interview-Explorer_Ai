@@ -40,6 +40,7 @@ def evaluate_speaking(answers: Dict[str, str]) -> dict:
     - Responses must be in JSON format.
     - Place the evaluation in the `speaking` value of the JSON output.
     - Do not include titles or other additional descriptions.
+    - Refer to users as '면접자'.
 
     # Output Format
     {{
