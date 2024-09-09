@@ -68,8 +68,8 @@ def analyze_landmarks(pose_landmarks):
         x_diff = left_shoulder.x - right_shoulder.x
         # shoulder_diff = abs(z_diff) + abs(x_diff) / 2
 
-        print(f"어깨 z 좌표 차이: {z_diff:.2f}")
-        print(f"어깨 x 좌표 차이: {x_diff:.2f}")
+        # print(f"어깨 z 좌표 차이: {z_diff:.2f}")
+        # print(f"어깨 x 좌표 차이: {x_diff:.2f}")
         # print(f"어깨 좌표 차이: {shoulder_diff:.2f}")
 
         if abs(z_diff) > 0.05:
