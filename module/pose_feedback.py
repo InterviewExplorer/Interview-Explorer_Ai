@@ -13,29 +13,22 @@ gpt_model = os.getenv("gpt")
 # OpenAI 클라이언트 초기화
 client = OpenAI(api_key=api_key)
 
-def analyze_pose_movement(pose_results):
-    if not pose_results or not hasattr(pose_results, 'pose_landmarks'):
-        raise ValueError("포즈 랜드마크를 가져올 수 없습니다.")
+def analyze_pose_movement(feedback_list):
+    if not feedback_list or not isinstance(feedback_list, list):
+        raise ValueError("유요한 피드백 리스트를 제공해야 합니다.")
     
     feedback: str = ""
 
-    # 결과에서 포즈 랜드마크를 가져오기
-    pose_landmarks = pose_results.pose_landmarks
-
-    if pose_landmarks:
-        print("포즈 랜드마크가 사용 가능하고 유효합니다.")
+    if feedback_list:
+        print("피드백 리스트가 사용 가능하고 유효합니다.")
     else:
-        print("포즈 랜드마크를 사용할 수 없거나 유효하지 않습니다.")
+        print("피드백 리스트를 사용할 수 없거나 유효하지 않습니다.")
 
-    if pose_landmarks:
-        feedback_list = analyze_landmarks(pose_landmarks)
+    if len(feedback_list) > 0:
         feedback = get_feedback_from_llm(feedback_list)
-        consolidated_feedback = consolidate_feedback(feedback_list)
     else:
         feedback = "포즈와 손을 감지할 수 없습니다."
 
-    print("행동 감지(pose_feedback.py): " + "".join(feedback_list))
-    print("개별 피드백(pose_feedback.py): " + "".join(feedback))
     return feedback
 
 # 각 영상 피드백

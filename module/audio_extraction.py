@@ -4,7 +4,7 @@ import os
 import cv2
 import mediapipe as mp
 from module.check_distance import analyze_video_landmarks
-
+from module.pose_feedback import analyze_pose_movement
 def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     """
     메모리에서 webm 파일을 mp3 형식으로 변환하고 포즈를 분석합니다.
@@ -34,10 +34,10 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
         "HEAVY": 2
     }
 
-    # MediaPipe 포즈 모듈 초기화
+    # MediaPipe Pose 모듈 초기화
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
-        model_complexity=MODEL_COMPLEXITY["LITE"],
+        model_complexity=MODEL_COMPLEXITY["FULL"],
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5
     )
@@ -64,7 +64,7 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
 
         # 포즈 추정 수행
         pose_results = pose.process(rgb_frame)
-
+        
         # 포즈 결과 저장 (랜드마크가 감지된 경우에만)
         if pose_results.pose_landmarks:
             all_pose_results.append(pose_results.pose_landmarks)
@@ -78,8 +78,11 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     # 전체 비디오에 대한 포즈 분석 및 중복 제거된 피드백 수집
     feedback_set = set(analyze_video_landmarks(all_pose_results))
 
-    # 최종 피드백 출력 (중복 제거됨)
-    final_feedback = "\n".join(feedback_set)
+    # List로 리턴 받은 feedback_set을 넘겨주며 개별 피드백 생성
+    feedback = analyze_pose_movement(list(feedback_set))
 
-    print("결과아아아아ㅏ아아아아아아", final_feedback)
-    return final_feedback
+    # 최종 피드백 출력 (중복 제거됨)
+    # final_feedback = "\n".join(feedback_set)
+
+    # print("지적 목록(audio_extraction.py): ", "".join(feedback_set))
+    return feedback
