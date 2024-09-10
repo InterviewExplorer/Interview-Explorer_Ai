@@ -266,7 +266,6 @@ class AnswersInput(BaseModel):
     
 @app.post("/speaking")
 async def speaking(input: AnswersInput):
-    print("@@@@Answers", input.answers)
     try:
         evaluation = evaluate_speaking(input.answers)
         return evaluation
