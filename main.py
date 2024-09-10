@@ -67,6 +67,7 @@ async def process_audio(file: UploadFile = File(...)):
 
         # webm 파일을 mp3로 변환
         feedback = convert_webm_to_mp3(webm_file, audio_output_path)
+        # print("feedback(main.py): ", "".join(feedback))
         
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
@@ -82,7 +83,6 @@ async def process_audio(file: UploadFile = File(...)):
             "status": "success",
             "message": "MP3 파일의 텍스트가 추출되었습니다.",
             "transcript": transcript,
-            "feedback": "".join(feedback)
         })
 
     except Exception as e:
@@ -98,9 +98,10 @@ def get_consolidate_feedback(req: FeedbackRequest):
     try:
         if req.feedback:
             feedback_list = feedback_manager.get_feedback()
+            # print("피드백 리스트(main.py): ", "".join(feedback_list))
             consolidated_feedback = consolidate_feedback(feedback_list)
             feedback_manager.reset_feedback()
-            print("통합 피드백(main.py): ", consolidated_feedback)
+            # print("통합 피드백(main.py): ", consolidated_feedback)
             return JSONResponse(content={
                 "status": "success",
                 "consolidated_feedback": consolidated_feedback
