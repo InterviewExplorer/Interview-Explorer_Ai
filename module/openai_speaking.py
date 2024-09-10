@@ -29,7 +29,8 @@ def evaluate_speaking(answers: Dict[str, str]) -> dict:
     - Evaluate the language-related aspects in the ({combined_text}).
     - Check for the use of meaningless words (e.g., "um," "uh") and the presence of repeated words.
     - Provide specific feedback on the interviewee's language habits and speaking style.
-    - Ensure that all instances of meaningless words (e.g., "um") are accurately identified.
+    - Check if formal language is being used. For example, encourage the use of phrases like "~했습니다" rather than informal phrases like "~했어요."
+    - Verify if informal or casual speech is being used.
     - Do not evaluate the content of the response, only focus on language habits and expressions.
     - Clearly state any positive and negative aspects observed.
 
@@ -39,6 +40,7 @@ def evaluate_speaking(answers: Dict[str, str]) -> dict:
     - Responses must be in JSON format.
     - Place the evaluation in the `speaking` value of the JSON output.
     - Do not include titles or other additional descriptions.
+    - Refer to users as '면접자'.
 
     # Output Format
     {{

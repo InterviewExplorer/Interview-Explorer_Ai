@@ -43,6 +43,7 @@ def evaluate_answer(question: str, answer: str, years: str, job: str, type: str)
         - Place the explanation in the `explanation` value of the JSON output.
         - Place the model answer in the `model` value of the JSON output.
         - Do not include any additional explanations beyond the specified output format.
+        - Refer to users as '면접자'.
 
         # Output Format
         {{
@@ -72,6 +73,7 @@ def evaluate_answer(question: str, answer: str, years: str, job: str, type: str)
         - Place the explanation in the `explanation` value of the JSON output.
         - Place the intention of the question in the `intention` value of the JSON output.
         - Do not include any additional explanations beyond the specified output format.
+        - Refer to users as '면접자'.
         
         # Output Format
         {{
