@@ -20,7 +20,6 @@ client = OpenAI(api_key=api_key)
 def evaluate_speaking(answers: Dict[str, str]) -> dict:
     # 모든 답변을 하나의 문자열로 결합
     combined_text = " ".join(answers.values())
-    print("combined_text", combined_text)
 
     prompt = f"""
     # Role
