@@ -104,7 +104,6 @@ def generateQ_behavioral(job, years, pdf_file=None, max_retries=3):
     selected_prompt = prompt_with_resume if pdf_file else prompt_without_resume
 
     questions = get_behavioralQ(selected_prompt)
-    print("@@@@@@@@@questions", questions)
 
     if questions is None:
         default_questions = {
