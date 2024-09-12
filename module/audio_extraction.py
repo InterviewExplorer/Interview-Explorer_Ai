@@ -4,7 +4,6 @@ import os
 import cv2
 import mediapipe as mp
 from module.check_distance import analyze_video_landmarks
-from module.pose_feedback import analyze_pose_movement
 def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     """
     메모리에서 webm 파일을 mp3 형식으로 변환하고 포즈를 분석합니다.
@@ -76,13 +75,8 @@ def convert_webm_to_mp3(webm_file: io.BytesIO, mp3_path: str):
     os.remove(temp_webm_path)
 
     # 전체 비디오에 대한 포즈 분석 및 중복 제거된 피드백 수집
-    feedback_set = set(analyze_video_landmarks(all_pose_results))
+    # feedback_set, face_touch_total, hand_move_total, not_front_total = analyze_video_landmarks(all_pose_results)
+    feedback_set = analyze_video_landmarks(all_pose_results)
 
-    # List로 리턴 받은 feedback_set을 넘겨주며 개별 피드백 생성
-    feedback = analyze_pose_movement(list(feedback_set))
-
-    # 최종 피드백 출력 (중복 제거됨)
-    # final_feedback = "\n".join(feedback_set)
-
-    # print("지적 목록(audio_extraction.py): ", "".join(feedback_set))
-    return feedback
+    # return list(feedback_set), face_touch_total, hand_move_total, not_front_total
+    return list(feedback_set)
