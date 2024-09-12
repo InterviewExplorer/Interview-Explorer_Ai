@@ -6,7 +6,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Web
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
-from module.whisper_medium import transcribe_audio
+# from module.whisper_medium import transcribe_audio
+from module.whisper_api import transcribe_audio
 # from module.ibm import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
@@ -29,9 +30,11 @@ from module import openai_behavioral
 # from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
+
 @app.get("/")
 async def hello_world():
     return {"message": "hello"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 여기에 프론트엔드의 도메인 또는 '*'을 추가합니다
@@ -39,10 +42,6 @@ app.add_middleware(
     allow_methods=["*"],  # 필요한 HTTP 메서드를 설정합니다
     allow_headers=["*"],  # 필요한 헤더를 설정합니다
 )
-
-# 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
-if not os.path.exists('audio'):
-    os.makedirs('audio')
 
 # 상태 관리 클래스 정의
 class FeedbackManager:
@@ -60,6 +59,11 @@ class FeedbackManager:
 
 feedback_manager = FeedbackManager() # 피드백 인스턴스 생성
 
+
+# 오디오 파일을 저장할 폴더를 확인하고, 없으면 생성합니다.
+if not os.path.exists('audio'):
+    os.makedirs('audio')
+
 @app.post("/process_audio")
 async def process_audio(file: UploadFile = File(...)):
     try:
@@ -72,7 +76,6 @@ async def process_audio(file: UploadFile = File(...)):
 
         # webm 파일을 mp3로 변환
         feedback = convert_webm_to_mp3(webm_file, audio_output_path)
-        # print("feedback(main.py): ", "".join(feedback))
         
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
