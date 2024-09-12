@@ -2,7 +2,7 @@
 from module import firstLLM
 import shutil
 from tempfile import NamedTemporaryFile
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
@@ -12,6 +12,10 @@ from module.ai_presenter import fetch_result_url
 import io
 import os
 import uuid
+import cv2
+import base64
+import numpy as np
+from module.guide import process_frame
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from module.llm_openai import follow_Q
@@ -272,3 +276,31 @@ async def speaking(input: AnswersInput):
         return evaluation
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+
+            try:
+                img_data = base64.b64decode(data.split(',')[1])
+                nparr = np.frombuffer(img_data, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                
+                processed_frame, success_flag = process_frame(frame)
+                
+                _, buffer = cv2.imencode('.jpg', processed_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                processed_image = base64.b64encode(buffer).decode('utf-8')
+                
+                await websocket.send_json({
+                    "image": f"data:image/jpeg;base64,{processed_image}",
+                    "success": success_flag
+                })
+            except Exception as e:
+                (f"Error processing frame: {str(e)}")
+    except Exception as e:
+        (f"WebSocket error: {str(e)}")
+    finally:
+        ("WebSocket connection closed")
