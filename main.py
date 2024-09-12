@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 from module.whisper_medium import transcribe_audio
+# from module.whisper_api import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
 import os
@@ -28,9 +29,11 @@ from module import openai_behavioral
 # from module.pose_feedback import consolidate_feedback
 
 app = FastAPI()
+
 @app.get("/")
 async def hello_world():
     return {"message": "hello"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 여기에 프론트엔드의 도메인 또는 '*'을 추가합니다
@@ -56,8 +59,7 @@ async def process_audio(file: UploadFile = File(...)):
         # webm 파일을 mp3로 변환
         # feedback, face_touch_total, hand_move_total, not_front_total = convert_webm_to_mp3(webm_file, audio_output_path)
         feedback = convert_webm_to_mp3(webm_file, audio_output_path)
-        print("feedback(main.py): ", feedback)
-
+        
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
             transcript = transcribe_audio(mp3_file)
