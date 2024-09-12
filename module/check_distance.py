@@ -42,6 +42,11 @@ def analyze_landmarks(pose_landmarks):
     
     feedback_list = []
 
+    # touch_face = 0
+    # hand_move = 0
+    # not_front = 0
+
+
     # 유클리드 거리 계산 2D
     def euclidean_distance_2d(point1, point2):
         return math.sqrt((point1.x - point2[0]) ** 2 + (point1.y - point2[1]) ** 2)
@@ -52,41 +57,51 @@ def analyze_landmarks(pose_landmarks):
         if left_wrist.visibility > 0.5 and face_center[3] > 0.9 and left_wrist.z > -2:
             distance = euclidean_distance_2d(left_wrist, face_center)
             if distance < 0.25:
-                feedback_list.append("왼손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+                feedback_list.append("얼굴 만짐")
+                # touch_face = 1
             else:
-                feedback_list.append("왼손이 산만하게 움직이고 있습니다.")
+                feedback_list.append("산만한 손의 움직임")
+                # hand_move = 1
 
         if right_wrist.visibility > 0.5 and face_center[3] > 0.9 and right_wrist.z > -2.3:
             distance = euclidean_distance_2d(right_wrist, face_center)
             if distance < 0.25:
-                feedback_list.append("오른손이 얼굴을 만지는 습관이 있을 수 있습니다.")
+                feedback_list.append("얼굴 만짐")
+                # touch_face = 1
             else:
-                feedback_list.append("오른손이 산만하게 움직이고 있습니다.")
+                feedback_list.append("산만한 손의 움직임")
+                # hand_move = 1
 
     # 상체가 정면을 바라보지 않는 경우
     if left_shoulder.visibility > 0.5 and right_shoulder.visibility > 0.5:
         shoulder_z_diff = left_shoulder.z - right_shoulder.z
-        arg_shuilder_z_diff = (left_shoulder.z + right_shoulder.z) / 2
         if abs(shoulder_z_diff) > 0.3:
             if shoulder_z_diff > 0:
-                feedback_list.append("상체가 왼쪽으로 돌아간 자세입니다.")
+                feedback_list.append("정면을 보지않는 자세")
+                # not_front = 1
             elif shoulder_z_diff < 0:
-                feedback_list.append("상체가 오른쪽으로 돌아간 자세입니다.")
-        elif arg_shuilder_z_diff < -0.6:
-            feedback_list.append("상체가 앞으로 쏠려 있는 상태입니다.")
-        elif arg_shuilder_z_diff > -0.3:
-            feedback_list.append("상체가 뒤로 쏠려 있는 상태입니다.")
+                feedback_list.append("정면을 보지않는 자세")
+                # not_front = 1
 
+    # return feedback_list, touch_face, hand_move, not_front
     return feedback_list
 
 def analyze_video_landmarks(pose_landmarks_sequence):
     feedback_set = set()
     frame_count = len(pose_landmarks_sequence)
+    # face_touch_total = 0
+    # hand_move_total = 0
+    # not_front_total = 0
 
     for frame, pose_landmarks in enumerate(pose_landmarks_sequence):
+        # frame_feedback, touch_face, hand_move, not_front = analyze_landmarks(pose_landmarks)
         frame_feedback = analyze_landmarks(pose_landmarks)
         feedback_set.update(frame_feedback)
-
+        # face_touch_total = max(face_touch_total, touch_face)
+        # hand_move_total = max(hand_move_total, hand_move)
+        # not_front_total = max(not_front_total, not_front)
+        
+    # return list(feedback_set), face_touch_total, hand_move_total, not_front_total
     return list(feedback_set)
 
 # 이 파일의 끝에 다음 줄 추가

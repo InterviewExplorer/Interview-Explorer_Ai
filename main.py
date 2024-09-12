@@ -14,7 +14,7 @@ import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from module.llm_openai import follow_Q
-from typing import Dict
+from typing import Dict, List
 import asyncio
 from module.openai_evaluate import evaluate_answer
 from module.openai_summarize import summarize_text
@@ -39,22 +39,6 @@ app.add_middleware(
 if not os.path.exists('audio'):
     os.makedirs('audio')
 
-# 상태 관리 클래스 정의
-class FeedbackManager:
-    def __init__(self):
-        self.feedback = []  # 피드백을 저장할 리스트 초기화
-
-    def add_feedback(self, feedback):
-        self.feedback.extend(feedback)  # 피드백을 추가
-
-    def reset_feedback(self):
-        self.feedback = []  # 피드백 리스트 초기화
-
-    def get_feedback(self):
-        return self.feedback  # 현재 피드백 리스트 반환
-
-feedback_manager = FeedbackManager() # 피드백 인스턴스 생성
-
 @app.post("/process_audio")
 async def process_audio(file: UploadFile = File(...)):
     try:
@@ -66,9 +50,10 @@ async def process_audio(file: UploadFile = File(...)):
         audio_output_path = os.path.join("audio", unique_filename)
 
         # webm 파일을 mp3로 변환
+        # feedback, face_touch_total, hand_move_total, not_front_total = convert_webm_to_mp3(webm_file, audio_output_path)
         feedback = convert_webm_to_mp3(webm_file, audio_output_path)
-        # print("feedback(main.py): ", "".join(feedback))
-        
+        print("feedback(main.py): ", feedback)
+
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
             transcript = transcribe_audio(mp3_file)
@@ -76,31 +61,33 @@ async def process_audio(file: UploadFile = File(...)):
         # MP3 파일 삭제 (옵션: 디스크 공간 절약)
         os.remove(audio_output_path)
 
-        # 피드백 적재
-        feedback_manager.add_feedback(feedback)
-
         return JSONResponse(content={
             "status": "success",
             "message": "MP3 파일의 텍스트가 추출되었습니다.",
             "transcript": transcript,
+            "feedback": feedback,
+            # "face_touch_total": face_touch_total,
+            # "hand_move_total": hand_move_total,
+            # "not_front_total": not_front_total
         })
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-class FeedbackRequest(BaseModel):
-    feedback: bool
-
-# 프론트에서 "면접 종료" 누르면 boolean 값을 받아와서 피드백을 쏴주고 리셋
 @app.post("/get_consolidate_feedback")
-def get_consolidate_feedback(req: FeedbackRequest):
+# async def get_consolidate_feedback(req: List[str] = Form(...)):
+async def get_consolidate_feedback(req: Request):
     try:
-        if req.feedback:
-            feedback_list = feedback_manager.get_feedback()
-            # print("피드백 리스트(main.py): ", "".join(feedback_list))
+        req_json = await req.json()
+        # print("req_json(main.py): ", req_json)
+        feedback_list = req_json.get("feedback", {}).get("feedbackList")
+
+        # print("Received feedback_list(main.py): ", feedback_list)
+        # print("Type of feedback_list: ", type(feedback_list))
+
+        if feedback_list:
             consolidated_feedback = consolidate_feedback(feedback_list)
-            feedback_manager.reset_feedback()
             # print("통합 피드백(main.py): ", consolidated_feedback)
             return JSONResponse(content={
                 "status": "success",
