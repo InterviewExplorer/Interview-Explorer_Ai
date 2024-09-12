@@ -8,7 +8,7 @@ GET_URL_TEMPLATE = "https://api.d-id.com/talks/"
 HEADERS = {
     "accept": "application/json",
     "content-type": "application/json",
-    "authorization": "Basic YVhCeVpYUjBlVEEwTUROQVoyMWhhV3d1WTI5dDotQThQNEx3cEk3aXVTOVNqQ2JjZGI="   # 인증 토큰을 추가하세요
+    "authorization": os.getenv("did_token")   # 인증 토큰을 추가하세요
 }
 
 async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
