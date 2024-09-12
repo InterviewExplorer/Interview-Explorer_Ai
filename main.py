@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
 # from module.whisper_medium import transcribe_audio
 from module.whisper_api import transcribe_audio
-# from module.ibm import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
 import os
