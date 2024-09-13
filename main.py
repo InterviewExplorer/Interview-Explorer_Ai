@@ -112,11 +112,11 @@ async def get_consolidate_feedback(req: Request):
 
 # 우현 면접 질문 생성
 @app.post("/basic_question")
-async def basic_question(job: str = Form(...), years: str = Form(...)):
-    if job or years is None:
+async def basic_question(job: str = Form(...), years: str = Form(...), interviewType: str = Form(...)):
+    if not job or not years:
         raise HTTPException(status_code=400, detail="직업과 연차를 안 쓰다니, 거만하군...")
 
-    result = create_basic_question(job, years)
+    result = create_basic_question(job, years, interviewType)
 
     return None
         
