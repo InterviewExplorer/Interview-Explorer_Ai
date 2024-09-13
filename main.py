@@ -59,6 +59,7 @@ async def process_audio(file: UploadFile = File(...)):
         # webm 파일을 mp3로 변환
         # feedback, face_touch_total, hand_move_total, not_front_total = convert_webm_to_mp3(webm_file, audio_output_path)
         feedback = convert_webm_to_mp3(webm_file, audio_output_path)
+        print("feedback(main.py): ", feedback)
         
         # MP3 파일을 텍스트로 변환
         with open(audio_output_path, "rb") as mp3_file:
