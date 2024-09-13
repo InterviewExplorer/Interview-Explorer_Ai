@@ -112,28 +112,11 @@ async def get_consolidate_feedback(req: Request):
 
 # 우현 면접 질문 생성
 @app.post("/basic_question")
-async def basic_question(job: str = Form(...), years: str = Form(...), file: UploadFile = File(None)):
+async def basic_question(job: str = Form(...), years: str = Form(...)):
     if job or years is None:
         raise HTTPException(status_code=400, detail="직업과 연차를 안 쓰다니, 거만하군...")
-    
-    pdf_content = None
 
-    if file:
-        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-            shutil.copyfileobj(file.file, temp_file)
-            pdf_content = temp_file.name
-
-    if pdf_content:
-        print(f"PDF 파일 저장 경로: {pdf_content}")
-
-    result = create_basic_question(job, years, pdf_content)
-
-    if pdf_content:
-        try:
-            os.remove(pdf_content)
-            print(f"PDF 파일 삭제 완료: {pdf_content}")
-        except Exception as e:
-            print(f"PDF 파일 삭제 실패: {e}")
+    result = create_basic_question(job, years)
 
     return None
         
