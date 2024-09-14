@@ -28,6 +28,7 @@ from module.openai_speaking import evaluate_speaking
 from module import openai_behavioral
 # from module.pose_feedback import consolidate_feedback
 from module.openai_basic import create_basic_question
+import json
 
 app = FastAPI()
 
@@ -117,8 +118,9 @@ async def basic_question(job: str = Form(...), years: str = Form(...), interview
         raise HTTPException(status_code=400, detail="직업과 연차를 안 쓰다니, 거만하군...")
 
     result = create_basic_question(job, years, interviewType)
+    print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
 
-    return None
+    return JSONResponse(content=result)
         
 @app.post("/generateQ/")
 async def create_upload_file(
