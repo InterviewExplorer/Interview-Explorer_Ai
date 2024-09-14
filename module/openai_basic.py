@@ -53,6 +53,7 @@ def create_basic_question(job, year, interviewType):
         # Task
         Create a set of five behavioral interview questions for a candidate. 
         Ensure that the questions are challenging and relevant to assess the candidate's personality and soft skills.
+        You must create your question in Korean.
         Each question should assess one of the following areas:
         - The first question should assess "honesty (reliability)."
         - The second question should assess "interpersonal skills."
@@ -70,7 +71,6 @@ def create_basic_question(job, year, interviewType):
             "Q5": "Your fifth question based on the specified area"
         }}
         """
-        return prompt
     else:
         raise ValueError("인터뷰 유형이 잘못되었습니다. 다시 선택해 주세요.")
 

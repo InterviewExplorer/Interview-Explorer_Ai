@@ -6,8 +6,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Web
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
-# from module.whisper_medium import transcribe_audio
-from module.whisper_api import transcribe_audio
+from module.whisper_medium import transcribe_audio
+# from module.whisper_api import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
 import os
@@ -115,10 +115,10 @@ async def get_consolidate_feedback(req: Request):
 @app.post("/basic_question")
 async def basic_question(job: str = Form(...), years: str = Form(...), interviewType: str = Form(...)):
     if not job or not years:
-        raise HTTPException(status_code=400, detail="직업과 연차를 안 쓰다니, 거만하군...")
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
 
     result = create_basic_question(job, years, interviewType)
-    print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
+    # print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
 
     return JSONResponse(content=result)
         
