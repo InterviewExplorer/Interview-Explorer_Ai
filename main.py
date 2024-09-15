@@ -27,6 +27,8 @@ from module.pose_feedback import consolidate_feedback
 from module.openai_speaking import evaluate_speaking
 from module import openai_behavioral
 # from module.pose_feedback import consolidate_feedback
+from module.openai_basic import create_basic_question
+import json
 
 app = FastAPI()
 
@@ -109,6 +111,17 @@ async def get_consolidate_feedback(req: Request):
         print(f"에러 발생: {str(e)}")  # 에러 로깅 추가
         raise HTTPException(status_code=422, detail=str(e))
 
+# 우현 면접 질문 생성
+@app.post("/basic_question")
+async def basic_question(job: str = Form(...), years: str = Form(...), interviewType: str = Form(...)):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    result = create_basic_question(job, years, interviewType)
+    # print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
+
+    return JSONResponse(content=result)
+        
 @app.post("/generateQ/")
 async def create_upload_file(
     job: str = Form(...),
