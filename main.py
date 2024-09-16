@@ -26,6 +26,8 @@ from module.openai_summarize import summarize_text
 from module.pose_feedback import consolidate_feedback
 from module.openai_speaking import evaluate_speaking
 from module import openai_behavioral
+from module.openai_resumeTech import technical_resume
+from module.openai_resumBehav import behavioral_resume
 # from module.pose_feedback import consolidate_feedback
 from module.openai_basic import create_basic_question
 import json
@@ -306,3 +308,65 @@ async def websocket_endpoint(websocket: WebSocket):
         (f"WebSocket error: {str(e)}")
     finally:
         ("WebSocket connection closed")
+
+@app.post("/technical_resume")
+async def create_upload_file(
+    job: str = Form(...),
+    years: str = Form(...),
+    file: UploadFile = File(None)
+):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    pdf_content = None
+    if file:
+        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
+            pdf_content = temp_file.name
+
+    print(f"직업군: {job}, 연차: {years}")
+    if pdf_content:
+        print(f"PDF 파일 저장 경로: {pdf_content}")
+
+    result = technical_resume(job, years, pdf_content)
+
+    # PDF 파일 삭제
+    if pdf_content:
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+            
+    return JSONResponse(content=result)
+
+@app.post("/behavioral_resume")
+async def create_upload_file_behavioral(
+    job: str = Form(...),
+    years: str = Form(...),
+    file: UploadFile = File(None)
+):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    pdf_content = None
+    if file:
+        with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
+            pdf_content = temp_file.name
+
+    print(f"직업군: {job}, 연차: {years}")
+    if pdf_content:
+        print(f"PDF 파일 저장 경로: {pdf_content}")
+
+    result = behavioral_resume(job, years, pdf_content)
+
+    # PDF 파일 삭제
+    if pdf_content:
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+            
+    return JSONResponse(content=result)
