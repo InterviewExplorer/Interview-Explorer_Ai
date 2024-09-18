@@ -6,8 +6,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Web
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
-from module.whisper_medium import transcribe_audio
-# from module.whisper_api import transcribe_audio
+# from module.whisper_medium import transcribe_audio
+from module.whisper_api import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
 import os
@@ -30,6 +30,7 @@ from module.openai_resumeTech import technical_resume
 from module.openai_resumBehav import behavioral_resume
 # from module.pose_feedback import consolidate_feedback
 from module.openai_basic import create_basic_question
+from module.openai_each import assessment_each
 import json
 
 app = FastAPI()
@@ -250,6 +251,32 @@ async def evaluate(request: EvaluateRequest):
     try:
         # 답변 평가
         evaluation = evaluate_answer(question, answer, years, job, type)
+        return JSONResponse(content={"evaluation": evaluation})
+    
+    except Exception as e:
+        # 에러 메시지 반환
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# 데이터 모델 정의
+class EvaluationData(BaseModel):
+    evaluations: dict
+    type: str
+
+@app.post("/each")
+async def each(request: EvaluateRequest):
+    # 요청 본문에서 데이터 추출
+    question = request.question
+    answer = request.answer
+    years = request.years
+    job = request.job
+    type = request.type
+
+    if not question or not answer or not years or not job:
+        raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
+    
+    try:
+        # 답변 평가
+        evaluation = assessment_each(question, answer, years, job, type)
         return JSONResponse(content={"evaluation": evaluation})
     
     except Exception as e:
