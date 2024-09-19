@@ -2,6 +2,7 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 import json
+import random
 
 load_dotenv()
 
@@ -17,64 +18,190 @@ if gpt_model is None:
 client = OpenAI(api_key=api_key)
 
 def create_basic_question(job, year, interviewType):
+    
     if interviewType == "technical":
         prompt = f"""
         # Role
-        You are the interviewer who creates technical questions.
-
-        # Audience
-        The audience for these questions is candidates applying for the position of {job} with {year} years of experience in the field.
+        You are the interviewer who creates technical interview questions.
 
         # Task
-        Create a set of five technical interview questions for the audience. 
-        Ensure that the questions are challenging and relevant to the {job} role, 
-        and cover both fundamental and advanced topics that someone with {year} years of experience should know.
-        You must create your question in Korean.
-        Questions should always be put into verbal form.
-        Each question should assess one of the following areas:
-        - The first question should assess "how the problem is solved."
-        - The second question should assess "technical literacy."
-        - The third question should assess "logical thinking."
-        - The fourth question should assess "learning ability."
-        - The fifth question should assess "collaboration and communication," specifically focusing on how to resolve technical disagreements in a team setting.
+        Create technical questions based on the following criteria:
+        - User experience level: {year} years
+        - User role: {job}
+
+        # Instructions
+        - Ensure that questions are relevant, clear, and focused on assessing technical knowledge.
+        - Questions should be answerable through verbal explanation.
+        - Write your questions in Korean only.
+        - Construct questions at a level appropriate for the years of experience provided.
+        - Do not ask for code examples.
+        - Generate 50 unique (non-duplicate) technical questions based on the user's role and experience level.
+        - Randomly choose 10 out of 50 questions you created
+        - For the first problem, you need to create a question that can evaluate your "problem-solving approach."
+        - The second problem is to create a question that can evaluate "technical understanding."
+        - The third problem is to create a question that can evaluate "logical thinking."
+        - The fourth problem requires creating a question that can evaluate "learning ability."
+        - The fifth problem is to create questions that can evaluate "collaboration and communication."
+
+        # Policy
+        - Responses must be in JSON format.
+        - The first question generated places the values in order from "problem_solving" in the JSON output.
+        - The first question generated places the values in order from "technical_understanding" in the JSON output.
+        - The first question generated places the values in order from "logical_thinking" in the JSON output.
+        - The first question generated places the values in order from "learning_ability" in the JSON output.
+        - The first question generated places the values in order from "collaboration_communication" in the JSON output.
 
         # Output Format
-        You must strictly adhere to the following JSON format:
         {{
-            "Q1": "Your first question based on role and experience",
-            "Q2": "Your second question based on role and experience",
-            "Q3": "Your third question based on role and experience",
-            "Q4": "Your fourth question based on role and experience",
-            "Q5": "Your fifth question based on role and experience"
+            "problem_solving" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "technical_understanding" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "logical_thinking" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "learning_ability" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "collaboration_communication" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }}
         }}
         """
     elif interviewType == "behavioral":
         prompt = f"""
         # Role
-        You are the interviewer who creates behavioral questions.
+        You are the interviewer who creates personality interview questions.
 
-        # Audience
-        The audience for these questions is candidates applying for the position of {job} with {year} years of experience in the field.
+        # Instructions
+        - Questions should be relevant, clear, and focused on assessing character.
+        - Questions should be answerable through verbal explanation.
+        - Write your questions in Korean only.
+        - Generate 50 unique (non-duplicate) personality questions.
+        - Randomly choose 10 out of 50 questions you created
+        - The first problem is to create a question that can evaluate "honesty (trustworthiness)".
+        - The second problem is to create questions that can evaluate "interpersonal relationships."
+        - The third problem is to create a question that can evaluate "self-motivation (passion)."
+        - The fourth problem is to create a question that can evaluate "adaptability."
+        - The fifth problem is to create a question that can evaluate "self-awareness."
 
-        # Task
-        Create a set of five behavioral interview questions for a candidate. 
-        Ensure that the questions are challenging and relevant to assess the candidate's personality and soft skills.
-        You must create your question in Korean.
-        Each question should assess one of the following areas:
-        - The first question should assess "honesty (reliability)."
-        - The second question should assess "interpersonal skills."
-        - The third question should assess "self-motivation (passion)."
-        - The fourth question should assess "adaptability."
-        - The fifth question should assess "self-awareness."
+        # Policy
+        - Responses must be in JSON format.
+        - The first question generated places the values in order from "honesty" in the JSON output.
+        - The first question generated places the values in order from "interpersonal_relationships" in the JSON output.
+        - The first question generated places the values in order from "self_motivation" in the JSON output.
+        - The first question generated places the values in order from "adaptability" in the JSON output.
+        - The first question generated places the values in order from "self_awareness" in the JSON output.
 
         # Output Format
-        You must strictly adhere to the following JSON format:
         {{
-            "Q1": "Your first question based on the specified area",
-            "Q2": "Your second question based on the specified area",
-            "Q3": "Your third question based on the specified area",
-            "Q4": "Your fourth question based on the specified area",
-            "Q5": "Your fifth question based on the specified area"
+            "honesty" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "interpersonal_relationships" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "self_motivation " : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "adaptability" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }},
+            "self_awareness" : {{
+                "Q1": "",
+                "Q2": "",
+                "Q3": "",
+                "Q4": "",
+                "Q5": "",
+                "Q6": "",
+                "Q7": "",
+                "Q8": "",
+                "Q9": "",
+                "Q10": ""
+            }}
         }}
         """
     else:
@@ -87,11 +214,64 @@ def create_basic_question(job, year, interviewType):
                 {"role": "system", "content": "You are a professional interviewer."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0
+            temperature=0,
         )
         response_content = completion.choices[0].message.content
         result = json.loads(response_content)
 
-        return result
+        if interviewType == "technical":
+            categories = [
+                "problem_solving",
+                "technical_understanding",
+                "logical_thinking",
+                "learning_ability",
+                "collaboration_communication"
+            ]
+            questions = {
+                "problem_solving": [],
+                "technical_understanding": [],
+                "logical_thinking": [],
+                "learning_ability": [],
+                "collaboration_communication": []
+            }
+        else:
+            categories = [
+                "honesty",
+                "interpersonal_relationships",
+                "self_motivation",
+                "adaptability",
+                "self_awareness"
+            ]
+            questions = {
+                "honesty": [],
+                "interpersonal_relationships": [],
+                "self_motivation": [],
+                "adaptability": [],
+                "self_awareness": []
+            }
+
+        for category in categories:
+            for i in range(1, 11):
+                question = result[category].get(f"Q{i}")
+                if question:
+                    questions[category].append(question)
+
+        # 모든 질문 생성 프린트문
+        # for category, question_list in questions.items():
+        #     print(f"{category}:")
+        #     for question in question_list:
+        #         print(f" - {question}")
+
+        selected_questions = {}
+        for category, question_list in questions.items():
+            if question_list:
+                random.shuffle(question_list)
+                selected_questions[category] = question_list[0]
+
+        json_output = {}
+        for index, (category, question) in enumerate(selected_questions.items(), start=1):
+            json_output[f"Q{index}"] = question
+
+        return json_output
     except Exception as e:
         raise ValueError(f"질문 생성 실패: {e}")
