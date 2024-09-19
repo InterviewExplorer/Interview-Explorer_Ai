@@ -121,6 +121,12 @@ async def basic_question(job: str = Form(...), years: str = Form(...), interview
         raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
 
     result = create_basic_question(job, years, interviewType)
+
+    if isinstance(result, str):
+        # print("반환 값이 STR 입니다.")
+        result = json.loads(result)
+
+    # 요소당 한 개의 질문, 총 다섯 개의 질문 생성 프린트문
     # print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
 
     return JSONResponse(content=result)
