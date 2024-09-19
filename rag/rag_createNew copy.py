@@ -1,7 +1,7 @@
 import os
 from elasticsearch import Elasticsearch
 import json
-import random
+import random 
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -55,7 +55,6 @@ def generate_questions(years, job, combined_context, num_questions):
     # Instructions
     - Generate {num_questions} questions to assess the user's interest in new technologies related to their role.
     - Specify the name of a newly released technology in each question.
-    - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
     - The questions should be light in terms of level, focusing on concepts or the degree of interest.
     - Questions should be answerable through verbal explanation.
 
@@ -70,10 +69,10 @@ def generate_questions(years, job, combined_context, num_questions):
     
     # Output Format
     {{
-        "Questions": [
+        "Questions": "[
             ""
             ...
-        ]
+        ]"
     }}
     """
     
@@ -89,30 +88,24 @@ def generate_questions(years, job, combined_context, num_questions):
     response_content = completion.choices[0].message.content
     
     try:
-        print("@@@@response_content", response_content)
-        
         result = json.loads(response_content)
 
         if isinstance(result, dict) and "Questions" in result:
-            questions = result["Questions"]
-            
-            # questions 필드가 문자열인 경우
-            if isinstance(questions, str):
-                questions_list = json.loads(questions)
-            # questions 필드가 리스트인 경우
-            elif isinstance(questions, list):
-                questions_list = questions
-            else:
-                return {"error": "Questions 필드의 형식이 올바르지 않습니다."}
+            questions_str = result["Questions"]
+            print("@@@@questions_str", questions_str)
+            print("@@@@questions_str", type(questions_str))
 
-            # 리스트에서 랜덤으로 하나 선택
-            if questions_list:
+            questions_list = json.loads(questions_str)  # Convert string to list
+            print("@@@@questions_list", questions_list)
+            print("@@@@questions_list", type(questions_list))
+            
+            if isinstance(questions_list, list) and questions_list:
                 selected_question = random.choice(questions_list)
                 return {"Questions": selected_question}
             else:
-                return {"Questions": "질문이 없습니다."}
+                return {"Questions": "No questions available."}
         
-        return {"error": "Questions 필드가 없거나 예상된 형식이 아닙니다."}
+        return {"error": "Questions field is missing or not in the expected format."}
     
     except json.JSONDecodeError as e:
         return {"error": f"JSON 파싱 오류: {e}"}
