@@ -33,6 +33,8 @@ from module.openai_basic import create_basic_question
 from module.openai_each import assessment_each
 import json
 
+from rag.rag_createNew import create_newQ
+
 app = FastAPI()
 
 @app.get("/")
@@ -396,4 +398,14 @@ async def create_upload_file_behavioral(
         except Exception as e:
             print(f"PDF 파일 삭제 실패: {e}")
             
+    return JSONResponse(content=result)
+
+
+@app.post("/rag_newQ")
+async def question_newTechnology(job: str = Form(...), years: str = Form(...), type: str = Form(...)):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    result = create_newQ(job, years)
+
     return JSONResponse(content=result)

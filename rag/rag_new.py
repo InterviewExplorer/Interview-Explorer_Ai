@@ -8,27 +8,23 @@ from langchain_text_splitters import CharacterTextSplitter
 
 # 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-# INDEX_NAME = 'newtechnologyquestions'
-INDEX_NAME = 'dj-strawberry'
-URL = 'https://www.aitimes.com/news/articleView.html?idxno=161540'
+INDEX_NAME = 'new_technology'
+URL = 'https://www.aitimes.com/news/articleView.html?idxno=163446'
 
-# Elasticsearch 클라이언트 
 es = Elasticsearch([ELASTICSEARCH_HOST])
-
-# 기존 인덱스 삭제
-# def delete_index(index_name):
-#     if es.indices.exists(index=index_name):
-#         es.indices.delete(index=index_name)
-#         print(f"인덱스 '{index_name}'가 삭제되었습니다.")
-#     else:
-#         print(f"인덱스 '{index_name}'가 존재하지 않습니다.")
 
 # 웹사이트에서 텍스트 추출
 def fetch_questions(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
-    content_tags = soup.find_all('p')
-    return ' '.join([tag.get_text().strip() for tag in content_tags])
+
+    heading_tags = soup.select('.article-view-header .heading')
+    body_paragraphs = soup.select('#article-view-content-div p')
+    
+    header_text = ' '.join([tag.get_text().strip() for tag in heading_tags])
+    body_text = ' '.join([tag.get_text().strip() for tag in body_paragraphs])
+    
+    return header_text + ' ' + body_text
 
 # 텍스트 분할
 def split_text(text):
@@ -60,7 +56,7 @@ def create_index():
                     "question": {"type": "text"},
                     "vector": {
                         "type": "dense_vector",
-                        "dims": 768  # BERT 모델을 사용할 경우
+                        "dims": 768
                     }
                 }
             }
@@ -105,13 +101,7 @@ def print_text_from_index():
     else:
         print("No documents found.")
 
-# 전체 작업 실행
 def main():
-
-    # 인덱스 삭제
-    # delete_index('newtechnologyquestions')
-    # delete_index('test')
-
     # 웹에서 질문 데이터 추출 및 분할
     content = fetch_questions(URL)
     split_contents = split_text(content)

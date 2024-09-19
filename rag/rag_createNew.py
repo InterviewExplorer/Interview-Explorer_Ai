@@ -19,7 +19,7 @@ client = OpenAI(api_key=api_key)
 
 # Elasticsearch 클라이언트 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-INDEX_NAME = 'dj-strawberry'
+INDEX_NAME = 'new_technology'
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
 # Elasticsearch에서 관련 문서 검색
@@ -41,31 +41,38 @@ def search_documents(query, index_name=INDEX_NAME):
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
-# OpenAI를 사용하여 질문 생성
-def generate_question(context):
+def generate_questions(years, job, combined_context, num_questions):
     prompt = f"""
     # Role
     You are the interviewer.
 
     # Task
-    Create technical questions based on the following criteria:
-    - User experience level: 0 years
-    - User role: AI Developer
-    - Context: {context}
+    Create {num_questions} technical questions based on the following criteria:
+    - User experience level: {years} years
+    - User role: {job}
+    - Context: {combined_context}
 
     # Instructions
-    - Generate one question to assess the user's interest in new technologies related to their role.
-    - Specify the name of a newly released technology.
-    - The question should be light in terms of level, focusing on concepts or the degree of interest.
+    - Generate {num_questions} questions to assess the user's interest in new technologies related to their role.
+    - Specify the name of a newly released technology in each question.
+    - The questions should be light in terms of level, focusing on concepts or the degree of interest.
     - Questions should be answerable through verbal explanation.
+
+    # Policy
     - Write your questions in Korean only.
-    - Construct questions at a level appropriate for the years of experience provided.
     - Do not ask for code examples.
+    - If you don't know the answer, just say that you don't know.
+    - You must strictly adhere to the following JSON format.
+    - Only include the values corresponding to the questions in the output format.
+    - Do not include any other text, numbers, or explanations.
+    - Refer to users as '면접자'.
     
     # Output Format
-    You must strictly adhere to the following JSON format:
     {{
-        "Question": ""
+        "Questions": [
+            ""
+            ...
+        ]
     }}
     """
     
@@ -79,31 +86,29 @@ def generate_question(context):
     )
 
     response_content = completion.choices[0].message.content
-    result = json.loads(response_content)
     
-    return result
+    try:
+        result = json.loads(response_content)
 
-# 사용자가 입력한 질문으로 검색하고 질문 생성
-def main():
-    user_input = input("검색할 질문을 입력하세요: ")
+        if isinstance(result, dict) and "Questions" in result:
+            if isinstance(result["Questions"], set):
+                result["Questions"] = list(result["Questions"])
+        
+        return result
     
-    # 1. Elasticsearch에서 관련 문서 검색
-    related_docs = search_documents(user_input)
-    
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON 파싱 오류: {e}"}
+
+def create_newQ(job: str, years: str) -> dict:
+    related_docs = search_documents(job)
+
+    print("job, years : ", job, years)
     if related_docs:
-        print(f"관련 문서 {len(related_docs)}개를 찾았습니다.")
-        for i, doc in enumerate(related_docs, 1):
-            print(f"\n--- 문서 {i} ---")
-            print(doc)
-        
-        # 2. 검색된 문서를 바탕으로 질문 생성
-        combined_context = " ".join(related_docs)  # 검색된 문서를 하나의 컨텍스트로 결합
-        generated_question = generate_question(combined_context)
-        
-        print("\n생성된 질문:")
-        print(generated_question)
-    else:
-        print("관련 문서를 찾을 수 없습니다.")
+        combined_context = " ".join(related_docs)
+        num_questions = 10
+        questions = generate_questions(job, years, combined_context, num_questions)
 
-if __name__ == '__main__':
-    main()
+        return questions
+    else:
+        return {"Questions": ["문서를 찾지 못했습니다."]}
+
