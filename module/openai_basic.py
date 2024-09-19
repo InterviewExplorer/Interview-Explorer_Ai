@@ -22,18 +22,21 @@ def create_basic_question(job, year, interviewType):
         # Role
         You are the interviewer who creates technical questions.
 
+        # Audience
+        The audience for these questions is candidates applying for the position of {job} with {year} years of experience in the field.
+
         # Task
-        Create a set of five technical interview questions for a candidate applying for the position of {job}. 
-        The candidate has {year} years of experience in this field. 
+        Create a set of five technical interview questions for the audience. 
         Ensure that the questions are challenging and relevant to the {job} role, 
         and cover both fundamental and advanced topics that someone with {year} years of experience should know.
         You must create your question in Korean.
+        Questions should always be put into verbal form.
         Each question should assess one of the following areas:
         - The first question should assess "how the problem is solved."
         - The second question should assess "technical literacy."
         - The third question should assess "logical thinking."
         - The fourth question should assess "learning ability."
-        - The fifth question should assess "collaboration and communication."
+        - The fifth question should assess "collaboration and communication," specifically focusing on how to resolve technical disagreements in a team setting.
 
         # Output Format
         You must strictly adhere to the following JSON format:
@@ -49,6 +52,9 @@ def create_basic_question(job, year, interviewType):
         prompt = f"""
         # Role
         You are the interviewer who creates behavioral questions.
+
+        # Audience
+        The audience for these questions is candidates applying for the position of {job} with {year} years of experience in the field.
 
         # Task
         Create a set of five behavioral interview questions for a candidate. 
