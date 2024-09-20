@@ -19,64 +19,88 @@ client = OpenAI(api_key=api_key)
 
 # Elasticsearch 클라이언트 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-INDEX_NAME = 'new_technology'
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
 # Elasticsearch에서 관련 문서 검색
-def search_documents(query, index_name=INDEX_NAME):
+def search_documents(query, index_name):
     response = es.search(
         index=index_name,
         body={
             "query": {
                 "match": {
-                "question": {
-                    "query": query,
-                    "fuzziness": "AUTO"
-                }
+                    "question": {
+                        "query": query,
+                        "fuzziness": "AUTO"
+                    }
                 }
             },
-            "size": 10  # 관련 문서 5개를 가져옴
+            "size": 10  # 관련 문서 10개를 가져옴
         }
     )
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
-def generate_questions(years, job, combined_context, num_questions):
-    prompt = f"""
-    # Role
-    You are the interviewer.
+def generate_questions(job, type, combined_context, num_questions):
+    if type == "technical":
+        prompt = f"""
+        # Role
+        You are the interviewer.
 
-    # Task
-    Create {num_questions} technical questions based on the following criteria:
-    - User experience level: {years} years
-    - User role: {job}
-    - Context: {combined_context}
+        # Task
+        Create {num_questions} technical questions based on the following criteria:
+        - User role: {job}
+        - Context: {combined_context}
 
-    # Instructions
-    - Generate {num_questions} questions to assess the user's interest in new technologies related to their role.
-    - Specify the name of a newly released technology in each question.
-    - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
-    - The questions should be light in terms of level, focusing on concepts or the degree of interest.
-    - Questions should be answerable through verbal explanation.
+        # Instructions
+        - Generate {num_questions} questions to assess the user's interest in new technologies related to their role.
+        - Specify the name of a newly released technology in each question.
+        - Mention the field to which the newly released technology belongs.
+        - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
+        - If the question is not about the concept or awareness of the new technology, briefly explain the concept of the new technology before asking the question.
+        - The questions should be light in terms of level, focusing on concepts or the degree of interest.
+        - Questions should be answerable through verbal explanation.
 
-    # Policy
-    - Write your questions in Korean only.
-    - Do not ask for code examples.
-    - If you don't know the answer, just say that you don't know.
-    - You must strictly adhere to the following JSON format.
-    - Only include the values corresponding to the questions in the output format.
-    - Do not include any other text, numbers, or explanations.
-    - Refer to users as '면접자'.
-    
-    # Output Format
-    {{
-        "Questions": [
-            ""
-            ...
-        ]
-    }}
-    """
-    
+        # Policy
+        - Write your questions in Korean only.
+        - Do not ask for code examples.
+        - You must strictly adhere to the following JSON format.
+        - Only include the values corresponding to the questions in the output format.
+        - Do not include any other text, numbers, or explanations.
+        - Refer to users as '면접자'.
+
+        # Output Format
+        {{
+            "Questions": [
+                ""
+                ...
+            ]
+        }}
+        """
+    elif type == "behavioral":
+        prompt = f"""
+        # Role
+        You are the interviewer.
+
+        # Task
+        Create {num_questions} technical questions based on the following criteria:
+        - User role: {job}
+        - Context: {combined_context}
+
+        # Instructions
+
+        # Policy
+
+        # Output Format
+        {{
+            "Questions": [
+                ""
+                ...
+            ]
+        }}
+        """
+    else:
+        raise ValueError("Invalid type provided. Must be 'technical' or 'behavioral'.")
+
     completion = client.chat.completions.create(
         model=gpt_model,
         messages=[
@@ -87,15 +111,15 @@ def generate_questions(years, job, combined_context, num_questions):
     )
 
     response_content = completion.choices[0].message.content
-    
+
     try:
         print("@@@@response_content", response_content)
-        
+
         result = json.loads(response_content)
 
         if isinstance(result, dict) and "Questions" in result:
             questions = result["Questions"]
-            
+
             # questions 필드가 문자열인 경우
             if isinstance(questions, str):
                 questions_list = json.loads(questions)
@@ -111,21 +135,28 @@ def generate_questions(years, job, combined_context, num_questions):
                 return {"Questions": selected_question}
             else:
                 return {"Questions": "질문이 없습니다."}
-        
+
         return {"error": "Questions 필드가 없거나 예상된 형식이 아닙니다."}
-    
+
     except json.JSONDecodeError as e:
         return {"error": f"JSON 파싱 오류: {e}"}
 
-def create_newQ(job: str, years: str) -> dict:
-    related_docs = search_documents(job)
+def create_newQ(job: str, type: str) -> dict:
+    # type에 따라 INDEX_NAME 변경
+    if type == 'technical':
+        index_name = 'new_technology'
+    elif type == 'behavioral':
+        index_name = 'new_personality'
+    else:
+        return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
+
+    related_docs = search_documents(job, index_name)
 
     if related_docs:
         combined_context = " ".join(related_docs)
         num_questions = 10
-        questions = generate_questions(job, years, combined_context, num_questions)
+        questions = generate_questions(job, type, combined_context, num_questions)
 
         return questions
     else:
         return {"Questions": ["문서를 찾지 못했습니다."]}
-
