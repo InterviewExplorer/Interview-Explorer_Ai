@@ -22,7 +22,7 @@ ELASTICSEARCH_HOST = os.getenv("elastic")
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
 # Elasticsearch에서 관련 문서 검색
-def search_documents(query, index_name):
+def searchDocs_generate(query, index_name):
     response = es.search(
         index=index_name,
         body={
@@ -150,7 +150,7 @@ def create_newQ(job: str, type: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = search_documents(job, index_name)
+    related_docs = searchDocs_generate(job, index_name)
 
     if related_docs:
         combined_context = " ".join(related_docs)
