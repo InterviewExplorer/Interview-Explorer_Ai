@@ -23,6 +23,7 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 
 # Elasticsearch에서 관련 문서 검색
 def searchDocs_generate(query, index_name):
+    print(f"query: {query}, index_name: {index_name}")
     response = es.search(
         index=index_name,
         body={
@@ -87,9 +88,20 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
+        - “We need to create {num_questions} questions to evaluate the user’s personality.”
+        - Each question should specify a recent social issue.
+        - The interviewer may not be familiar with recent social issues, so adjust your questions accordingly.
+        - If a question is not about the social issue, briefly explain the issue before asking the question.
+        - Questions should focus on evaluating the interviewer's personality.
+        - Questions should be answerable through verbal explanation.
+        - When creating questions, you must create personality questions from the perspective of the {job}.
 
         # Policy
-
+        - Write your questions in Korean only.
+        - You must strictly adhere to the following JSON format.
+        - Only include the values corresponding to the questions in the output format.
+        - Refer to users as '면접자'.
+        
         # Output Format
         {{
             "Questions": [
@@ -146,7 +158,7 @@ def create_newQ(job: str, type: str) -> dict:
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        index_name = 'new_personality'
+        index_name = 'test_rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
