@@ -1,45 +1,70 @@
+import requests
 import os
+from bs4 import BeautifulSoup
+from transformers import BertTokenizer, BertModel
+import torch
 from elasticsearch import Elasticsearch
-import json
 import random
-from openai import OpenAI
 from dotenv import load_dotenv
+import json
+from openai import OpenAI
 
+# Load environment variables
 load_dotenv()
 
-api_key = os.getenv("API_KEY")
-if api_key is None:
-    raise ValueError("API_KEY가 없습니다.")
+# 설정
+ELASTICSEARCH_HOST = os.getenv("elastic")
+API_KEY = os.getenv("API_KEY")
+GPT_MODEL = os.getenv("gpt")
 
-gpt_model = os.getenv("gpt")
-if gpt_model is None:
+if API_KEY is None:
+    raise ValueError("API_KEY가 없습니다.")
+if GPT_MODEL is None:
     raise ValueError("GPT_Model이 없습니다.")
 
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=API_KEY)
 
 # Elasticsearch 클라이언트 설정
-ELASTICSEARCH_HOST = os.getenv("elastic")
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
-# Elasticsearch에서 관련 문서 검색
+# BERT 모델 및 토크나이저 불러오기
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertModel.from_pretrained('bert-base-uncased')
+
+# 질문을 벡터로 변환하는 함수
+def get_vector(text):
+    inputs = tokenizer(text, return_tensors='pt')
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state[0][0].numpy()
+
+# Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_generate(query, index_name):
+    query_vector = get_vector(query)  # 쿼리를 벡터로 변환
     response = es.search(
         index=index_name,
         body={
             "query": {
-                "match": {
-                    "question": {
-                        "query": query,
-                        "fuzziness": "AUTO"
+                "script_score": {
+                    "query": {
+                        "match_all": {}
+                    },
+                    "script": {
+                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                        "params": {
+                            "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
+                        }
                     }
                 }
             },
             "size": 10  # 관련 문서 10개를 가져옴
         }
     )
+    
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
+# GPT를 이용해 새로운 질문을 생성하는 함수
 def generate_questions(job, type, combined_context, num_questions):
     if type == "technical":
         prompt = f"""
@@ -52,13 +77,14 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - Generate {num_questions} questions to assess the user's interest in new technologies related to their role.
+        - Generate {num_questions} unique questions to assess the user's interest in new technologies related to their role.
+        - Generate questions about technology related to the {job}.
         - Specify the name of a newly released technology in each question.
         - Mention the field to which the newly released technology belongs.
         - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
         - If the question is not about the concept or awareness of the new technology, briefly explain the concept of the new technology before asking the question.
         - The questions should be light in terms of level, focusing on concepts or the degree of interest.
-        - Questions should be answerable through verbal explanation.
+        - Questions should be answerable through verbal explanation.        
 
         # Policy
         - Write your questions in Korean only.
@@ -82,7 +108,7 @@ def generate_questions(job, type, combined_context, num_questions):
         You are the interviewer.
 
         # Task
-        Create {num_questions} technical questions based on the following criteria:
+        Create {num_questions} behavioral questions based on the following criteria:
         - User role: {job}
         - Context: {combined_context}
 
@@ -102,7 +128,7 @@ def generate_questions(job, type, combined_context, num_questions):
         raise ValueError("Invalid type provided. Must be 'technical' or 'behavioral'.")
 
     completion = client.chat.completions.create(
-        model=gpt_model,
+        model=GPT_MODEL,
         messages=[
             {"role": "system", "content": "You are a professional interviewer."},
             {"role": "user", "content": prompt}
@@ -111,10 +137,9 @@ def generate_questions(job, type, combined_context, num_questions):
     )
 
     response_content = completion.choices[0].message.content
+    print("response_content", response_content)
 
     try:
-        print("@@@@response_content", response_content)
-
         result = json.loads(response_content)
 
         if isinstance(result, dict) and "Questions" in result:
@@ -141,6 +166,7 @@ def generate_questions(job, type, combined_context, num_questions):
     except json.JSONDecodeError as e:
         return {"error": f"JSON 파싱 오류: {e}"}
 
+# 새로운 질문을 생성하는 함수
 def create_newQ(job: str, type: str) -> dict:
     # type에 따라 INDEX_NAME 변경
     if type == 'technical':

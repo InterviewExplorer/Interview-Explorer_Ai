@@ -48,7 +48,7 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
 
         # Task
         - Evaluate only the interest in new technologies and understanding of current trends.
-        - Do not assess specific examples or details.
+        - Regarding ({answer}), specific examples and details are excluded from evaluation factors.
         - If the ({answer}) contains no content related to the technology or field mentioned in the question ({question}), assign a score of 0.
         - If the ({answer}) is related to the field of technology mentioned in the question, assign a score between 50 and 100.
         - If the ({answer}) is related to the specific technology mentioned in the question, assign a score between 70 and 100.
