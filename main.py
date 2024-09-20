@@ -34,6 +34,7 @@ from module.openai_each import assessment_each
 import json
 
 from rag.rag_createNew import create_newQ
+from rag.rag_evaluateNew import evaluate_newQ
 
 app = FastAPI()
 
@@ -400,12 +401,26 @@ async def create_upload_file_behavioral(
             
     return JSONResponse(content=result)
 
-
-@app.post("/rag_newQ")
-async def question_newTechnology(job: str = Form(...), type: str = Form(...)):
+@app.post("/newQ_create")
+async def newQuestion_create(job: str = Form(...), type: str = Form(...)):
     if not job or not type:
         raise HTTPException(status_code=400, detail="직업과 타입은 필수 입력 항목입니다.")
 
     result = create_newQ(job, type)
+
+    return JSONResponse(content=result)
+
+@app.post("/newQ_evaluete")
+async def newQuestion_evaluete(
+    question: str = Form(...), 
+    answer: str = Form(...), 
+    years: str = Form(...), 
+    job: str = Form(...), 
+    type: str = Form(...)
+):
+    if not question or not answer or not years or not job or not type:
+        raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
+
+    result = evaluate_newQ(question, answer, years, job, type)
 
     return JSONResponse(content=result)
