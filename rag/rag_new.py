@@ -13,7 +13,7 @@ load_dotenv()
 ELASTICSEARCH_HOST = os.getenv("elastic")
 INDEX_NAME = 'test_rag_behavioral'
 # URL = 'https://www.aitimes.com/news/articleView.html?idxno=163446'
-URL = 'https://n.news.naver.com/mnews/article/055/0001191787'
+URL = 'https://n.news.naver.com/mnews/article/088/0000905792'
 
 es = Elasticsearch([ELASTICSEARCH_HOST])
 

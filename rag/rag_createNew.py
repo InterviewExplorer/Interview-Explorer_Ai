@@ -113,10 +113,9 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - We need to create {num_questions} questions to evaluate the users personality.
-        - Each question should specify a recent social issue.
-        - The interviewer may not be familiar with recent social issues, so adjust your questions accordingly.
-        - If a question is not about the social issue, briefly explain the issue before asking the question.
+        - We need to create {num_questions} questions to evaluate the user's personality.
+        - Each question should specify a recent social issue, including a brief background of the issue.
+        - The interviewer may not be familiar with recent social issues, so briefly explain the issue before asking the question.
         - Questions should focus on evaluating the interviewer's personality.
         - Questions should be answerable through verbal explanation.
         - When creating questions, you must create personality questions from the perspective of the {job}.
