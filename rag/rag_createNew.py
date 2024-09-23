@@ -31,30 +31,44 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
-# 질문을 벡터로 변환하는 함수
 def get_vector(text):
     inputs = tokenizer(text, return_tensors='pt')
     with torch.no_grad():
         outputs = model(**inputs)
     return outputs.last_hidden_state[0][0].numpy()
 
-# Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_generate(query, index_name):
-    query_vector = get_vector(query)  # 쿼리를 벡터로 변환
+    query_vector = get_vector(query).tolist()
+    
+    # 하이브리드 검색을 위한 쿼리
     response = es.search(
         index=index_name,
         body={
             "query": {
-                "script_score": {
-                    "query": {
-                        "match_all": {}
-                    },
-                    "script": {
-                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-                        "params": {
-                            "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
+                "bool": {
+                    "should": [
+                        {
+                            "match": {
+                                "question": {
+                                    "query": query,
+                                    "fuzziness": "AUTO"
+                                }
+                            }
+                        },
+                        {
+                            "script_score": {
+                                "query": {
+                                    "match_all": {}
+                                },
+                                "script": {
+                                    "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                                    "params": {
+                                        "query_vector": query_vector
+                                    }
+                                }
+                            }
                         }
-                    }
+                    ]
                 }
             },
             "size": 10  # 관련 문서 10개를 가져옴
@@ -64,7 +78,6 @@ def searchDocs_generate(query, index_name):
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
-# GPT를 이용해 새로운 질문을 생성하는 함수
 def generate_questions(job, type, combined_context, num_questions):
     if type == "technical":
         prompt = f"""
@@ -77,16 +90,20 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - Generate {num_questions} unique questions to assess the user's interest in new technologies related to their role.
-        - Generate questions about technology related to the {job}.
+        - Generate {num_questions} unique questions to assess the user's interest in new technologies related to {job}.
+        - Generate light-level questions about technology related to the {job}.
+        - The questions should focus on concepts or the degree of interest.
         - Specify the name of a newly released technology in each question.
-        - Mention the field to which the newly released technology belongs.
-        - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
-        - If the question is not about the concept or awareness of the new technology, briefly explain the concept of the new technology before asking the question.
-        - The questions should be light in terms of level, focusing on concepts or the degree of interest.
-        - Questions should be answerable through verbal explanation.        
+        - Only ask questions related to developers or the IT field. Do not ask questions about other fields such as art creation, life sciences, etc.
+
+        # Example
+        - How do you think the free availability of MLOps platforms positively impacts the developer community?
+        - Have you heard of OpenAI's 'Strawberry' project? How do you think this project could contribute to the advancement of AI?
+        - Have you heard of the recently announced 'Mistral NeMo'? What benefits could this technology offer to developers?
+        - What do you think about the impact of AI model price reductions on developers?
 
         # Policy
+        - Questions should be answerable through verbal explanation.
         - Write your questions in Korean only.
         - Do not ask for code examples.
         - You must strictly adhere to the following JSON format.
@@ -177,6 +194,7 @@ def create_newQ(job: str, type: str) -> dict:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
     related_docs = searchDocs_generate(job, index_name)
+    print("related_docs", related_docs)
 
     if related_docs:
         combined_context = " ".join(related_docs)
