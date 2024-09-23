@@ -40,7 +40,7 @@ def summarize_text(evaluations, type):
         - Do not include personal opinions or unrelated information.
         - Keep the response within 5 lines, providing a summary of the evaluation.
         - Provide all information and responses only in Korean.
-        - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
+        - Only include the evaluation content in the output format, without any titles or special symbols.
         - The summary should be provided as a single cohesive assessment, without breaking it down into individual evaluations.
         - Refer to users as '면접자'.
     
@@ -65,7 +65,7 @@ def summarize_text(evaluations, type):
         - Do not include personal opinions or unrelated information.
         - Keep the response within 5 lines, providing a summary of the evaluation.
         - Provide all information and responses only in Korean.
-        - The evaluation content must be assigned only within the "" of the output format. Do not include titles or other additional descriptions.
+        - Only include the evaluation content in the output format, without any titles or special symbols.
         - The summary should be provided as a single cohesive assessment, without breaking it down into individual evaluations.
         - Refer to users as '면접자'.
     
@@ -86,7 +86,6 @@ def summarize_text(evaluations, type):
                     {"role": "system", "content": "You are a professional interviewer."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=150,  # 5줄 내외로 요약
                 temperature=0,
             )
             
