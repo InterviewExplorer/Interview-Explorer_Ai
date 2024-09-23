@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -39,28 +41,50 @@ def get_vector(text):
     return outputs.last_hidden_state[0][0].numpy()
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
-def searchDocs_generate(query, index_name):
-    query_vector = get_vector(query)  # 쿼리를 벡터로 변환
+# def searchDocs_generate(query, index_name):
+#     query_vector = get_vector(query)  # 쿼리를 벡터로 변환
+#     response = es.search(
+#         index=index_name,
+#         body={
+#             "query": {
+#                 "script_score": {
+#                     "query": {
+#                         "match_all": {}
+#                     },
+#                     "script": {
+#                         "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+#                         "params": {
+#                             "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
+#                         }
+#                     }
+#                 }
+#             },
+#             "size": 10  # 관련 문서 10개를 가져옴
+#         }
+#     )
+#
+#     hits = response['hits']['hits']
+#     return [hit['_source']['question'] for hit in hits]
+
+# Elasticsearch에서 관련 문서 검색
+def search_documents(query, index_name):
+    if index_name == 'test_rag_behavioral':
+        query = datetime.now().strftime("%Y.%m.%d")
+
     response = es.search(
         index=index_name,
         body={
             "query": {
-                "script_score": {
-                    "query": {
-                        "match_all": {}
-                    },
-                    "script": {
-                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-                        "params": {
-                            "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
-                        }
+                "match": {
+                    "question": {
+                        "query": query,
+                        "fuzziness": "AUTO"
                     }
                 }
             },
-            "size": 10  # 관련 문서 10개를 가져옴
+            "size": 10
         }
     )
-
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
@@ -113,12 +137,13 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - We need to create {num_questions} questions to evaluate the user's personality.
-        - Each question should specify a recent social issue, including a brief background of the issue.
-        - The interviewer may not be familiar with recent social issues, so briefly explain the issue before asking the question.
-        - Questions should focus on evaluating the interviewer's personality.
+        - You must create {num_questions} questions to evaluate the interviewee personality.
+        - Each question must be clearly formulated and include a brief background on recent social issues.
+        - The interviewee may not be familiar with recent social issues, so please briefly explain what the issue is before asking questions.
+        - Questions should be focused on assessing the interviewee's personality.
         - Questions should be answerable through verbal explanation.
         - When creating questions, you must create personality questions from the perspective of the {job}.
+        - Questions should be written in relation to the current issue.
 
         # Policy
         - Write your questions in Korean only.
@@ -186,7 +211,8 @@ def create_newQ(job: str, type: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = searchDocs_generate(job, index_name)
+    # related_docs = searchDocs_generate(job, index_name)
+    related_docs = search_documents(job, index_name)
 
     if related_docs:
         combined_context = " ".join(related_docs)

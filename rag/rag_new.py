@@ -13,7 +13,7 @@ load_dotenv()
 ELASTICSEARCH_HOST = os.getenv("elastic")
 INDEX_NAME = 'test_rag_behavioral'
 # URL = 'https://www.aitimes.com/news/articleView.html?idxno=163446'
-URL = 'https://n.news.naver.com/mnews/article/088/0000905792'
+URL = 'https://n.news.naver.com/mnews/article/056/0011804916'
 
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
@@ -24,11 +24,17 @@ def fetch_questions(url):
 
     heading_tags = soup.select('#title_area span')
     body_paragraphs = soup.select('#newsct_article *')
+    timestamp_tag = soup.select_one('.media_end_head_info_datestamp_time')
 
     header_text = ' '.join([tag.get_text().strip() for tag in heading_tags])
     body_text = ' '.join([tag.get_text().strip() for tag in body_paragraphs])
-    
-    return header_text + ' ' + body_text
+    timestamp_text = timestamp_tag.get_text().strip() if timestamp_tag else "시간 정보 없음"
+
+    print("header_text", header_text)
+    print("body_text", body_text)
+    print("timestamp_text", timestamp_text)
+
+    return header_text + ' ' + timestamp_text + ' ' + body_text
     # return header_text
 
 # 텍스트 분할
