@@ -6,8 +6,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Web
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from module.audio_extraction import convert_webm_to_mp3
-from module.whisper_medium import transcribe_audio
-# from module.whisper_api import transcribe_audio
+# from module.whisper_medium import transcribe_audio
+from module.whisper_api import transcribe_audio
 from module.ai_presenter import fetch_result_url
 import io
 import os
@@ -31,6 +31,7 @@ from module.openai_resumBehav import behavioral_resume
 # from module.pose_feedback import consolidate_feedback
 from module.openai_basic import create_basic_question
 from module.openai_each import assessment_each
+from module.openai_average import calculate_average
 import json
 
 from rag.rag_createNew import create_newQ
@@ -124,6 +125,12 @@ async def basic_question(job: str = Form(...), years: str = Form(...), interview
         raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
 
     result = create_basic_question(job, years, interviewType)
+
+    if isinstance(result, str):
+        # print("반환 값이 STR 입니다.")
+        result = json.loads(result)
+
+    # 요소당 한 개의 질문, 총 다섯 개의 질문 생성 프린트문
     # print("질문 생성 목록(BE): ", json.dumps(result, indent=4, ensure_ascii=False))
 
     return JSONResponse(content=result)
@@ -260,11 +267,6 @@ async def evaluate(request: EvaluateRequest):
         # 에러 메시지 반환
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-# 데이터 모델 정의
-class EvaluationData(BaseModel):
-    evaluations: dict
-    type: str
-
 @app.post("/each")
 async def each(request: EvaluateRequest):
     # 요청 본문에서 데이터 추출
@@ -285,6 +287,18 @@ async def each(request: EvaluateRequest):
     except Exception as e:
         # 에러 메시지 반환
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.post("/average")
+async def average(job: str = Form(...), years: str = Form(...), type: str = Form(...)):
+    if not job or not years:
+        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+
+    result = calculate_average(job, years, type)
+
+    if isinstance(result, str):
+        result = json.loads(result)
+
+    return JSONResponse(content=result)
 
 # 데이터 모델 정의
 class EvaluationData(BaseModel):
