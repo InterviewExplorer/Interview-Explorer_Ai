@@ -30,26 +30,42 @@ def create_basic_question(job, year, interviewType):
         - User role: {job}
 
         # Instructions
+        - Generate questions that relate specific technologies, considering the job and experience.
         - Ensure that questions are relevant, clear, and focused on assessing technical knowledge.
-        - Questions should be answerable through verbal explanation.
-        - Write your questions in Korean only.
         - Construct questions at a level appropriate for the years of experience provided.
-        - Do not ask for code examples.
-        - Generate 50 unique (non-duplicate) technical questions based on the user's role and experience level.
-        - Randomly choose 10 out of 50 questions you created
-        - For the first problem, you need to create a question that can evaluate your "problem-solving approach."
-        - The second problem is to create a question that can evaluate "technical understanding."
-        - The third problem is to create a question that can evaluate "logical thinking."
-        - The fourth problem requires creating a question that can evaluate "learning ability."
-        - The fifth problem is to create questions that can evaluate "collaboration and communication."
+        - Generate technical questions based on the user's role and experience level.
+
+        # Task1
+        - Generate 10 questions to evaluate the candidate's problem-solving approach.
+        - Ask specific questions about the problem-solving process, your experience solving a specific technical problem, how you analyzed and determined a solution to a given problem, and the difficulties you faced in the problem-solving process and how you solved it.
+        - Place the generated questions under the 'problem_solving' section in the Output Format.
+
+        # Task2
+        - Generate 10 questions to evaluate the candidate's technical-understanding approach.
+        - Ask specific questions about your previous technology stack description, why it was appropriate, what programming language or tools you have a deep understanding of, examples of how you used it, and specific skills or latest trends needed for your job.
+        - Place the generated questions under the 'technical_understanding' section in the Output Format.
+
+        # Task3
+        - Generate 10 questions to evaluate the candidate's logical-thinking approach.
+        - Assume a specific situation where a problem needs to be solved, and then ask the question.
+        - Place the generated questions under the 'logical_thinking' section in the Output Format.
+
+        # Task4
+        - Generate 10 questions to evaluate the candidate's learning-ability approach.
+        - Ask specifically about their experiences learning new technologies or tools, their learning methods, how they applied what they learned, their responses to technical changes or new challenges, specific examples, and how they self-studied to solve technical problems and the results of those efforts.
+        - Place the generated questions under the 'learning_ability' section in the Output Format.
+
+        # Task5
+        - Generate 10 questions to evaluate the candidate's collaboration-communication approach.
+        - Ask specifically about the problems faced during collaboration and the solutions, experiences in resolving technical issues, and how they handled disagreements or conflicts.
+        - Ask the candidate to provide specific examples from their projects or experiences.
+        - Place the generated questions under the 'collaboration_communication' section in the Output Format.
 
         # Policy
+        - Questions should be answerable through verbal explanation.
+        - Write your questions in Korean only.
+        - Do not ask for code examples.
         - Responses must be in JSON format.
-        - The first question generated places the values in order from "problem_solving" in the JSON output.
-        - The first question generated places the values in order from "technical_understanding" in the JSON output.
-        - The first question generated places the values in order from "logical_thinking" in the JSON output.
-        - The first question generated places the values in order from "learning_ability" in the JSON output.
-        - The first question generated places the values in order from "collaboration_communication" in the JSON output.
 
         # Output Format
         {{
@@ -257,10 +273,10 @@ def create_basic_question(job, year, interviewType):
                     questions[category].append(question)
 
         # 모든 질문 생성 프린트문
-        # for category, question_list in questions.items():
-        #     print(f"{category}:")
-        #     for question in question_list:
-        #         print(f" - {question}")
+        for category, question_list in questions.items():
+            print(f"{category}:")
+            for question in question_list:
+                print(f" - {question}")
 
         selected_questions = {}
         for category, question_list in questions.items():
