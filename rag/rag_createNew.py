@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 import os
@@ -33,6 +33,13 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
+# 현재 날짜 가져오기
+def get_random_date_within_days(days):
+    today = datetime.now()
+    random_days = random.randint(0, days)
+    random_date = today - timedelta(days=random_days)
+    return random_date.strftime("%Y.%m.%d")
+
 # 질문을 벡터로 변환하는 함수
 def get_vector(text):
     inputs = tokenizer(text, return_tensors='pt')
@@ -41,50 +48,32 @@ def get_vector(text):
     return outputs.last_hidden_state[0][0].numpy()
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
-# def searchDocs_generate(query, index_name):
-#     query_vector = get_vector(query)  # 쿼리를 벡터로 변환
-#     response = es.search(
-#         index=index_name,
-#         body={
-#             "query": {
-#                 "script_score": {
-#                     "query": {
-#                         "match_all": {}
-#                     },
-#                     "script": {
-#                         "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-#                         "params": {
-#                             "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
-#                         }
-#                     }
-#                 }
-#             },
-#             "size": 10  # 관련 문서 10개를 가져옴
-#         }
-#     )
-#
-#     hits = response['hits']['hits']
-#     return [hit['_source']['question'] for hit in hits]
-
-# Elasticsearch에서 관련 문서 검색
-def search_documents(query, index_name):
+def searchDocs_generate(query, index_name):
     if index_name == 'test_rag_behavioral':
-        query = datetime.now().strftime("%Y.%m.%d")
+        # 현재 날짜로 부터 3일 전
+        query = get_random_date_within_days(3)
 
+    query_vector = get_vector(query)  # 쿼리를 벡터로 변환
     response = es.search(
         index=index_name,
         body={
             "query": {
-                "match": {
-                    "question": {
-                        "query": query,
-                        "fuzziness": "AUTO"
+                "script_score": {
+                    "query": {
+                        "match_all": {}
+                    },
+                    "script": {
+                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                        "params": {
+                            "query_vector": query_vector.tolist()  # Elasticsearch에서 사용할 수 있도록 벡터를 리스트로 변환
+                        }
                     }
                 }
             },
-            "size": 10
+            "size": 10  # 관련 문서 10개를 가져옴
         }
     )
+
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
@@ -105,10 +94,10 @@ def generate_questions(job, type, combined_context, num_questions):
         - Generate questions about technology related to the {job}.
         - Specify the name of a newly released technology in each question.
         - Mention the field to which the newly released technology belongs.
-        - Assume that the interviewee might not be familiar with the new technology and ask questions accordingly.
+        - The interviewee may not be familiar with the new news, so give hints about the news and ask questions accordingly.
         - If the question is not about the concept or awareness of the new technology, briefly explain the concept of the new technology before asking the question.
         - The questions should be light in terms of level, focusing on concepts or the degree of interest.
-        - Questions should be answerable through verbal explanation.        
+        - Questions should be answerable through verbal explanation.
 
         # Policy
         - Write your questions in Korean only.
@@ -133,23 +122,30 @@ def generate_questions(job, type, combined_context, num_questions):
 
         # Task
         Create {num_questions} behavioral questions based on the following criteria:
-        - User role: {job}
         - Context: {combined_context}
 
         # Instructions
-        - You must create {num_questions} questions to evaluate the interviewee personality.
-        - Each question must be clearly formulated and include a brief background on recent social issues.
-        - The interviewee may not be familiar with recent social issues, so please briefly explain what the issue is before asking questions.
-        - Questions should be focused on assessing the interviewee's personality.
-        - Questions should be answerable through verbal explanation.
-        - When creating questions, you must create personality questions from the perspective of the {job}.
-        - Questions should be written in relation to the current issue.
-
+        - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.
+        - Each question should be clearly structured and include detailed background on recent social issues.
+        - The interviewee may not be familiar with current social issues, so you should explain in detail what is being discussed before asking questions.
+        - Questions should focus on assessing the interviewee's values, attitudes, and how they perceive social issues.
+        - Questions should be answerable through verbal explanation and should encourage the interviewee to share their thoughts and feelings.
+        - Questions must be written in a way that is related to the news content, addressing both positive and negative aspects.
+        - When creating questions, you should not mention the interviewee's occupation.
+        
+                
         # Policy
         - Write your questions in Korean only.
         - You must strictly adhere to the following JSON format.
         - Only include the values corresponding to the questions in the output format.
         - Refer to users as '면접자'.
+        - Questions should always refer to specific news events and clearly state the news source or background.
+        - Ensure that questions encourage the interviewee to express their opinions on both positive and negative impacts of the discussed issues.
+        
+                
+        # Example
+        - Recently, AI technology has been used to analyze health check-up results. What are your thoughts on the positive impacts of this technology on personal health management, and what potential ethical issues do you foresee?
+        - The bill to strengthen penalties for deepfake sexual crimes has recently passed in the National Assembly. What do you think about the impact of this legislation on society and the protection of individual privacy?
 
         # Output Format
         {{
@@ -201,6 +197,10 @@ def generate_questions(job, type, combined_context, num_questions):
     except json.JSONDecodeError as e:
         return {"error": f"JSON 파싱 오류: {e}"}
 
+# 크롤링 데이터 랜덤으로 가져오기
+def get_random_samples(data, sample_size=10):
+    return random.sample(data, min(sample_size, len(data)))
+
 # 새로운 질문을 생성하는 함수
 def create_newQ(job: str, type: str) -> dict:
     # type에 따라 INDEX_NAME 변경
@@ -211,11 +211,11 @@ def create_newQ(job: str, type: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    # related_docs = searchDocs_generate(job, index_name)
-    related_docs = search_documents(job, index_name)
+    related_docs = searchDocs_generate(job, index_name)
 
     if related_docs:
-        combined_context = " ".join(related_docs)
+        random_samples = get_random_samples(related_docs, sample_size=10)
+        combined_context = " ".join(random_samples)
         num_questions = 10
         questions = generate_questions(job, type, combined_context, num_questions)
 
