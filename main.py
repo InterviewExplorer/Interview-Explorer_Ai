@@ -416,10 +416,10 @@ async def create_upload_file_behavioral(
 
 
 @app.post("/rag_newQ")
-async def question_newTechnology(job: str = Form(...), years: str = Form(...), type: str = Form(...)):
-    if not job or not years:
-        raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
+async def question_newTechnology(job: str = Form(...), type: str = Form(...)):
+    if not job or not type:
+        raise HTTPException(status_code=400, detail="직업과 타입은 필수 입력 항목입니다.")
 
-    result = create_newQ(job, years)
+    result = create_newQ(job, type)
 
     return JSONResponse(content=result)
