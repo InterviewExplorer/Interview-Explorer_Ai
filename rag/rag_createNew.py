@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -31,16 +33,28 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
+# 현재 날짜 가져오기
+def get_random_date_within_days(days):
+    today = datetime.now()
+    random_days = random.randint(0, days)
+    random_date = today - timedelta(days=random_days)
+    return random_date.strftime("%Y.%m.%d")
+
+# 질문을 벡터로 변환하는 함수
 def get_vector(text):
     inputs = tokenizer(text, return_tensors='pt')
     with torch.no_grad():
         outputs = model(**inputs)
     return outputs.last_hidden_state[0][0].numpy()
 
+# Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_generate(query, index_name):
-    query_vector = get_vector(query).tolist()
+    if index_name == 'test_rag_behavioral':
+        # 현재 날짜로 부터 3일 전
+        query = get_random_date_within_days(3)
+
+    query_vector = get_vector(query).tolist()  # 쿼리를 벡터로 변환
     
-    # 하이브리드 검색을 위한 쿼리
     response = es.search(
         index=index_name,
         body={
@@ -126,12 +140,30 @@ def generate_questions(job, type, combined_context, num_questions):
 
         # Task
         Create {num_questions} behavioral questions based on the following criteria:
-        - User role: {job}
         - Context: {combined_context}
 
         # Instructions
-
+        - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.
+        - Each question should be clearly structured and include detailed background on recent social issues.
+        - The interviewee may not be familiar with current social issues, so you should explain in detail what is being discussed before asking questions.
+        - Questions should focus on assessing the interviewee's values, attitudes, and how they perceive social issues.
+        - Questions should be answerable through verbal explanation and should encourage the interviewee to share their thoughts and feelings.
+        - Questions must be written in a way that is related to the news content, addressing both positive and negative aspects.
+        - When creating questions, you should not mention the interviewee's occupation.
+        
+                
         # Policy
+        - Write your questions in Korean only.
+        - You must strictly adhere to the following JSON format.
+        - Only include the values corresponding to the questions in the output format.
+        - Refer to users as '면접자'.
+        - Questions should always refer to specific news events and clearly state the news source or background.
+        - Ensure that questions encourage the interviewee to express their opinions on both positive and negative impacts of the discussed issues.
+        
+                
+        # Example
+        - Recently, AI technology has been used to analyze health check-up results. What are your thoughts on the positive impacts of this technology on personal health management, and what potential ethical issues do you foresee?
+        - The bill to strengthen penalties for deepfake sexual crimes has recently passed in the National Assembly. What do you think about the impact of this legislation on society and the protection of individual privacy?
 
         # Output Format
         {{
@@ -183,13 +215,18 @@ def generate_questions(job, type, combined_context, num_questions):
     except json.JSONDecodeError as e:
         return {"error": f"JSON 파싱 오류: {e}"}
 
+# 크롤링 데이터 랜덤으로 가져오기
+def get_random_samples(data, sample_size=10):
+    return random.sample(data, min(sample_size, len(data)))
+
 # 새로운 질문을 생성하는 함수
 def create_newQ(job: str, type: str) -> dict:
     # type에 따라 INDEX_NAME 변경
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        index_name = 'new_personality'
+#          index_name = 'new_personality'
+        index_name = 'test_rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
@@ -197,7 +234,8 @@ def create_newQ(job: str, type: str) -> dict:
     print("related_docs", related_docs)
 
     if related_docs:
-        combined_context = " ".join(related_docs)
+        random_samples = get_random_samples(related_docs, sample_size=10)
+        combined_context = " ".join(random_samples)
         num_questions = 10
         questions = generate_questions(job, type, combined_context, num_questions)
 
