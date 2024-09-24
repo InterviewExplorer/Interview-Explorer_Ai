@@ -143,27 +143,30 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.
-        - Each question should be clearly structured and include detailed background on recent social issues.
-        - The interviewee may not be familiar with current social issues, so you should explain in detail what is being discussed before asking questions.
-        - Questions should focus on assessing the interviewee's values, attitudes, and how they perceive social issues.
-        - Questions should be answerable through verbal explanation and should encourage the interviewee to share their thoughts and feelings.
-        - Questions must be written in a way that is related to the news content, addressing both positive and negative aspects.
+        - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.        
+        - Each question should be clearly structured and include detailed background information on recent social issues.
+        - Questions should refer to specific news events and clearly state the news source or background.
+        - The interviewee may not be familiar with current social issues, so before asking questions, you should explain in detail what is being discussed and include additional explanations of relevant keywords.
+        - Questions should focus on assessing how the interviewee perceives the social issue.
+        - Questions should encourage the interviewee to express their thoughts through verbal explanations.
+        - The difficulty level of the questions should be such that the interviewee can answer even if they do not know much about the news.
+        - Questions must be consistent with the title and content of the news.
         - When creating questions, you should not mention the interviewee's occupation.
-        
-                
+        - The topic of the question must be a unique news topic that does not overlap.
+        - The questions you ask should focus on "What do you think?" rather than whether the interviewee knows this, and should be made so that even kindergarteners can answer.
+
         # Policy
         - Write your questions in Korean only.
         - You must strictly adhere to the following JSON format.
         - Only include the values corresponding to the questions in the output format.
         - Refer to users as '면접자'.
-        - Questions should always refer to specific news events and clearly state the news source or background.
-        - Ensure that questions encourage the interviewee to express their opinions on both positive and negative impacts of the discussed issues.
-        
-                
+         
         # Example
-        - Recently, AI technology has been used to analyze health check-up results. What are your thoughts on the positive impacts of this technology on personal health management, and what potential ethical issues do you foresee?
-        - The bill to strengthen penalties for deepfake sexual crimes has recently passed in the National Assembly. What do you think about the impact of this legislation on society and the protection of individual privacy?
+        - Recently, AI technology is being used to interpret health checkup results. What are your thoughts on the positive impact these technologies are having on personal health management? And what do you think are the ethical issues that may arise in this regard?
+        - Naver is collaborating with Saudi Arabia to develop an Arabic-based macrolanguage model. What are your thoughts on the impact of global collaboration on technological advancement?
+        - T Map has launched an AI location recommendation service. What do you think about the impact of AI on our choices and the problems it may cause?
+        - It is said that a smart speaker developed by KAIST can help manage mental health. What are your thoughts on the impact of technology on a person’s mental health?
+        - SK Hynix has installed its memory solution into open source Linux. What are your thoughts on the impact of open source technology on industry development?
 
         # Output Format
         {{
@@ -231,7 +234,7 @@ def create_newQ(job: str, type: str) -> dict:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
     related_docs = searchDocs_generate(job, index_name)
-    print("related_docs", related_docs)
+    # print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
