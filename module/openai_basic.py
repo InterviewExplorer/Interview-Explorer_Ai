@@ -108,23 +108,24 @@ def create_basic_question(job, year, interviewType):
 
         # Task1
         - Generate 10 questions to assess the interviewee's self-motivation and passion.
+        - Please ask specific questions about how to motivate oneself, how to maintain motivation, what efforts are made to achieve goals, and the challenges and success stories encountered in that process.
         - Place the generated questions under the 'self_motivation' section in the Output Format.
 
         # Task2
         - Generate 10 questions to assess the interviewee's self-awareness.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'self_awareness' section in the Output Format.
 
         # Task3
         - Generate 10 questions to assess the interviewee's interpersonal-relationships.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'interpersonal_relationships' section in the Output Format.
 
         # Task4
         - Generate 10 questions to assess the interviewee's adaptability.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'adaptability' section in the Output Format.
 
         # Task5
         - Generate 10 questions to assess the interviewee's honesty.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'honesty' section in the Output Format.
 
         # Policy
         - Questions should be answerable through verbal explanation.
@@ -185,7 +186,7 @@ def create_basic_question(job, year, interviewType):
         elif interviewType == "behavioral":
             categories = [
                 "self_motivation", 
-                "self_awareness" 
+                "self_awareness",
                 "interpersonal_relationships",
                 "adaptability", 
                 "honesty", 
