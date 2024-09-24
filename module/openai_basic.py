@@ -30,248 +30,181 @@ def create_basic_question(job, year, interviewType):
         - User role: {job}
 
         # Instructions
+        - Generate questions that relate specific technologies, considering the job and experience.
         - Ensure that questions are relevant, clear, and focused on assessing technical knowledge.
-        - Questions should be answerable through verbal explanation.
-        - Write your questions in Korean only.
         - Construct questions at a level appropriate for the years of experience provided.
-        - Do not ask for code examples.
-        - Generate 50 unique (non-duplicate) technical questions based on the user's role and experience level.
-        - Randomly choose 10 out of 50 questions you created
-        - For the first problem, you need to create a question that can evaluate your "problem-solving approach."
-        - The second problem is to create a question that can evaluate "technical understanding."
-        - The third problem is to create a question that can evaluate "logical thinking."
-        - The fourth problem requires creating a question that can evaluate "learning ability."
-        - The fifth problem is to create questions that can evaluate "collaboration and communication."
+        - Generate technical questions based on the user's role and experience level.
+
+        # Task1
+        - Generate 10 questions to evaluate the interviewee's technical-understanding approach.
+        - Ask specific questions about your previous technology stack description, why it was appropriate, what programming language or tools you have a deep understanding of, examples of how you used it, and specific skills or latest trends needed for your job.
+        - Place the generated questions under the 'technical_understanding' section in the Output Format.
+
+        # Task2
+        - Generate 10 questions to evaluate the interviewee's problem-solving approach.
+        - Ask specific questions about the problem-solving process, your experience solving a specific technical problem, how you analyzed and determined a solution to a given problem, and the difficulties you faced in the problem-solving process and how you solved it.
+        - Place the generated questions under the 'problem_solving' section in the Output Format.
+
+        # Task3
+        - Generate 10 questions to evaluate the interviewee's logical-thinking approach.
+        - Assume a specific situation where a problem needs to be solved, and then ask the question.
+        - Place the generated questions under the 'logical_thinking' section in the Output Format.
+
+        # Task4
+        - Generate 10 questions to evaluate the interviewee's learning-ability approach.
+        - Ask specifically about their experiences learning new technologies or tools, their learning methods, how they applied what they learned, their responses to technical changes or new challenges, specific examples, and how they self-studied to solve technical problems and the results of those efforts.
+        - Place the generated questions under the 'learning_ability' section in the Output Format.
+
+        # Task5
+        - Generate 10 questions to evaluate the interviewee's collaboration-communication approach.
+        - Ask specifically about the problems faced during collaboration and the solutions, experiences in resolving technical issues, and how they handled disagreements or conflicts.
+        - Ask the interviewee to provide specific examples from their projects or experiences.
+        - Place the generated questions under the 'collaboration_communication' section in the Output Format.
 
         # Policy
+        - Questions should be answerable through verbal explanation.
+        - Write your questions in Korean only.
+        - Do not ask for code examples.
         - Responses must be in JSON format.
-        - The first question generated places the values in order from "problem_solving" in the JSON output.
-        - The first question generated places the values in order from "technical_understanding" in the JSON output.
-        - The first question generated places the values in order from "logical_thinking" in the JSON output.
-        - The first question generated places the values in order from "learning_ability" in the JSON output.
-        - The first question generated places the values in order from "collaboration_communication" in the JSON output.
 
         # Output Format
         {{
-            "problem_solving" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "technical_understanding" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "logical_thinking" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "learning_ability" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "collaboration_communication" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }}
+            "technical_understanding" : [
+                ""
+                ...
+            ],
+            "problem_solving" : [
+                ""
+                ...
+            ],
+            "logical_thinking" : [
+                ""
+                ...
+            ],
+            "learning_ability" : [
+                ""
+                ...
+            ],
+            "collaboration_communication" : [
+                ""
+                ...
+            ],
         }}
         """
     elif interviewType == "behavioral":
         prompt = f"""
         # Role
-        You are the interviewer who creates personality interview questions.
+        You are an interviewer specializing in conducting personality interviews.
+
+        # Task
+        Create personality interview questions based on the following criteria:
+        - User experience level: {year} years
+        - User role: {job}
 
         # Instructions
-        - Questions should be relevant, clear, and focused on assessing character.
-        - Questions should be answerable through verbal explanation.
-        - Write your questions in Korean only.
-        - Generate 50 unique (non-duplicate) personality questions.
-        - Randomly choose 10 out of 50 questions you created
-        - The first problem is to create a question that can evaluate "honesty (trustworthiness)".
-        - The second problem is to create questions that can evaluate "interpersonal relationships."
-        - The third problem is to create a question that can evaluate "self-motivation (passion)."
-        - The fourth problem is to create a question that can evaluate "adaptability."
-        - The fifth problem is to create a question that can evaluate "self-awareness."
+        - Generate personality assessment questions considering the job and experience.
+        - Ensure that questions are relevant, clear, and focused on assessing personality traits.
+        - Ask the interviewee for specific experiences or examples in the questions.
+
+        # Task1
+        - Generate 10 questions to assess the interviewee's self-motivation and passion.
+        - Place the generated questions under the 'self_motivation' section in the Output Format.
+
+        # Task2
+        - Generate 10 questions to assess the interviewee's self-awareness.
+        - Place the generated questions under the 'self_motivation' section in the Output Format.
+
+        # Task3
+        - Generate 10 questions to assess the interviewee's interpersonal-relationships.
+        - Place the generated questions under the 'self_motivation' section in the Output Format.
+
+        # Task4
+        - Generate 10 questions to assess the interviewee's adaptability.
+        - Place the generated questions under the 'self_motivation' section in the Output Format.
+
+        # Task5
+        - Generate 10 questions to assess the interviewee's honesty.
+        - Place the generated questions under the 'self_motivation' section in the Output Format.
 
         # Policy
+        - Questions should be answerable through verbal explanation.
+        - Write your questions in Korean only.
         - Responses must be in JSON format.
-        - The first question generated places the values in order from "honesty" in the JSON output.
-        - The first question generated places the values in order from "interpersonal_relationships" in the JSON output.
-        - The first question generated places the values in order from "self_motivation" in the JSON output.
-        - The first question generated places the values in order from "adaptability" in the JSON output.
-        - The first question generated places the values in order from "self_awareness" in the JSON output.
+        - Refer to users as '면접자'.
 
         # Output Format
         {{
-            "honesty" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "interpersonal_relationships" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "self_motivation " : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "adaptability" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }},
-            "self_awareness" : {{
-                "Q1": "",
-                "Q2": "",
-                "Q3": "",
-                "Q4": "",
-                "Q5": "",
-                "Q6": "",
-                "Q7": "",
-                "Q8": "",
-                "Q9": "",
-                "Q10": ""
-            }}
+            "self_motivation " : [
+                ""
+                ...
+            ],
+            "self_awareness" : [
+                ""
+                ...
+            ],
+            "interpersonal_relationships" : [
+                ""
+                ...
+            ],
+            "adaptability" : [
+                ""
+                ...
+            ],
+            "honesty" : [
+                ""
+                ...
+            ],
         }}
         """
     else:
         raise ValueError("인터뷰 유형이 잘못되었습니다. 다시 선택해 주세요.")
+    
+    completion = client.chat.completions.create(
+        model=gpt_model,
+        messages=[
+            {"role": "system", "content": "You are a professional interviewer."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0,
+    )
+    response_content = completion.choices[0].message.content
+    print("response_content", response_content)
 
     try:
-        completion = client.chat.completions.create(
-            model=gpt_model,
-            messages=[
-                {"role": "system", "content": "You are a professional interviewer."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-        )
-        response_content = completion.choices[0].message.content
         result = json.loads(response_content)
 
+        categories = []
         if interviewType == "technical":
             categories = [
-                "problem_solving",
-                "technical_understanding",
-                "logical_thinking",
-                "learning_ability",
+                "technical_understanding", 
+                "problem_solving", 
+                "logical_thinking", 
+                "learning_ability", 
                 "collaboration_communication"
             ]
-            questions = {
-                "problem_solving": [],
-                "technical_understanding": [],
-                "logical_thinking": [],
-                "learning_ability": [],
-                "collaboration_communication": []
-            }
-        else:
+        elif interviewType == "behavioral":
             categories = [
-                "honesty",
+                "self_motivation", 
+                "self_awareness" 
                 "interpersonal_relationships",
-                "self_motivation",
-                "adaptability",
-                "self_awareness"
+                "adaptability", 
+                "honesty", 
             ]
-            questions = {
-                "honesty": [],
-                "interpersonal_relationships": [],
-                "self_motivation": [],
-                "adaptability": [],
-                "self_awareness": []
-            }
-
-        for category in categories:
-            for i in range(1, 11):
-                question = result[category].get(f"Q{i}")
-                if question:
-                    questions[category].append(question)
-
-        # 모든 질문 생성 프린트문
-        # for category, question_list in questions.items():
-        #     print(f"{category}:")
-        #     for question in question_list:
-        #         print(f" - {question}")
 
         selected_questions = {}
-        for category, question_list in questions.items():
-            if question_list:
-                random.shuffle(question_list)
-                selected_questions[category] = question_list[0]
+        for index, category in enumerate(categories, start=1):
+            questions_list = result.get(category, [])
+            if questions_list:
+                selected_question = random.choice(questions_list)
+                selected_questions[f"Q{index}"] = selected_question
+            else:
+                selected_questions[f"Q{index}"] = "질문이 없습니다."
 
-        json_output = {}
-        for index, (category, question) in enumerate(selected_questions.items(), start=1):
-            json_output[f"Q{index}"] = question
+        return selected_questions
 
-        return json_output
+
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON 파싱 오류: {e}"}
+    
     except Exception as e:
         raise ValueError(f"질문 생성 실패: {e}")
