@@ -34,11 +34,16 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
 # 현재 날짜 가져오기
-def get_random_date_within_days(days):
+# def get_random_date_within_days(days):
+#     today = datetime.now()
+#     random_days = random.randint(0, days)
+#     random_date = today - timedelta(days=random_days)
+#     return random_date.strftime("%Y.%m.%d")
+
+def get_dates_within_days(days):
     today = datetime.now()
-    random_days = random.randint(0, days)
-    random_date = today - timedelta(days=random_days)
-    return random_date.strftime("%Y.%m.%d")
+    dates = [(today - timedelta(days=i)).strftime("%Y.%m.%d") for i in range(days + 1)]
+    return dates
 
 # 질문을 벡터로 변환하는 함수
 def get_vector(text):
@@ -48,27 +53,46 @@ def get_vector(text):
     return outputs.last_hidden_state[0][0].numpy()
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
-def searchDocs_generate(query, index_name):
-    if index_name == 'test_rag_behavioral':
-        # 현재 날짜로 부터 3일 전
-        query = get_random_date_within_days(3)
+def searchDocs_generate(query, index_name, type):
+    should_queries = []  # should_queries 리스트 초기화
 
-    query_vector = get_vector(query).tolist()  # 쿼리를 벡터로 변환
-    
+    if type == 'behavioral':
+        # 현재 날짜로부터 3일 전까지의 날짜 리스트 생성
+        date_list = get_dates_within_days(2)
+        query = " ".join(date_list)
+        print("query: ", query)
+
+        # 날짜를 포함한 쿼리 작성
+        should_queries.extend([
+            {
+                "match": {
+                    "question": {
+                        "query": date,
+                        "fuzziness": "AUTO"
+                    }
+                }
+            } for date in date_list
+        ])
+
+    # 기본 쿼리 추가
+    should_queries.append({
+        "match": {
+            "question": {
+                "query": query,
+                "fuzziness": "AUTO"
+            }
+        }
+    })
+
+    # 쿼리를 벡터로 변환
+    query_vector = get_vector(query).tolist()
+
     response = es.search(
         index=index_name,
         body={
             "query": {
                 "bool": {
-                    "should": [
-                        {
-                            "match": {
-                                "question": {
-                                    "query": query,
-                                    "fuzziness": "AUTO"
-                                }
-                            }
-                        },
+                    "should": should_queries + [
                         {
                             "script_score": {
                                 "query": {
@@ -88,7 +112,7 @@ def searchDocs_generate(query, index_name):
             "size": 10  # 관련 문서 10개를 가져옴
         }
     )
-    
+
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
 
@@ -233,7 +257,7 @@ def create_newQ(job: str, type: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = searchDocs_generate(job, index_name)
+    related_docs = searchDocs_generate(job, index_name, type)
     # print("related_docs", related_docs)
 
     if related_docs:
