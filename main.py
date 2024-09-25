@@ -32,6 +32,8 @@ from module.openai_resumBehav import behavioral_resume
 from module.openai_basic import create_basic_question
 from module.openai_each import assessment_each
 import json
+from module.openai_pdf import pdf
+from module.pdfSave import main
 
 from rag.rag_createNew import create_newQ
 
@@ -415,3 +417,33 @@ async def question_newTechnology(job: str = Form(...), years: str = Form(...), t
     result = create_newQ(job, years)
 
     return JSONResponse(content=result)
+
+@app.post("/pdf")
+async def create_upload_files(files: list[UploadFile] = File(...)):
+    pdf_contents = []
+    results = []
+
+    # 업로드된 PDF 파일 처리
+    for file in files:
+        if file.content_type == "application/pdf":
+            # 임시 파일로 PDF 저장
+            with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                shutil.copyfileobj(file.file, temp_file)
+                pdf_contents.append(temp_file.name)
+
+    # 각 PDF에 대해 텍스트 추출 및 JSON 변환
+    for pdf_content in pdf_contents:
+        # pdf 함수가 비동기 함수라면 await로 호출
+        result = await pdf(pdf_content)
+        # print(result)
+        main(result)
+
+        # PDF 파일 삭제
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+
+    # 결과 반환
+    return JSONResponse(content={"results": results})
