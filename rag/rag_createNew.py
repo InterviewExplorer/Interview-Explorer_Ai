@@ -33,17 +33,11 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
-# 현재 날짜 가져오기
-# def get_random_date_within_days(days):
-#     today = datetime.now()
-#     random_days = random.randint(0, days)
-#     random_date = today - timedelta(days=random_days)
-#     return random_date.strftime("%Y.%m.%d")
-
-def get_dates_within_days(days):
+# 현재 날짜로 부터 30일 전 까지의 날짜 함수
+def get_date_range(days: int):
     today = datetime.now()
-    dates = [(today - timedelta(days=i)).strftime("%Y.%m.%d") for i in range(days + 1)]
-    return dates
+    start_date = today - timedelta(days=days)
+    return today.strftime("%Y-%m-%d"), start_date.strftime("%Y-%m-%d")
 
 # 질문을 벡터로 변환하는 함수
 def get_vector(text):
@@ -54,62 +48,65 @@ def get_vector(text):
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_generate(query, index_name, type):
-    should_queries = []  # should_queries 리스트 초기화
 
-    if type == 'behavioral':
-        # 현재 날짜로부터 3일 전까지의 날짜 리스트 생성
-        date_list = get_dates_within_days(2)
-        query = " ".join(date_list)
-        print("query: ", query)
-
-        # 날짜를 포함한 쿼리 작성
-        should_queries.extend([
-            {
-                "match": {
-                    "question": {
-                        "query": date,
-                        "fuzziness": "AUTO"
-                    }
-                }
-            } for date in date_list
-        ])
-
-    # 기본 쿼리 추가
-    should_queries.append({
-        "match": {
-            "question": {
-                "query": query,
-                "fuzziness": "AUTO"
-            }
-        }
-    })
+    today_str, thirty_days_ago_str = get_date_range(30)  # 항상 날짜를 가져옴
+    print("오늘 날짜: ", today_str, "30일 전 까지의 날짜: ", thirty_days_ago_str)
 
     # 쿼리를 벡터로 변환
     query_vector = get_vector(query).tolist()
+
+    # 기본 쿼리 구성
+    must_queries = []
+
+    # type이 "behavioral"인 경우 날짜 조건 추가
+    if type == "behavioral":
+        must_queries.append({
+            "range": {
+                "date_field": {
+                    "gte": thirty_days_ago_str,
+                    "lte": today_str
+                }
+            }
+        })
+
+    # 질문과 벡터 쿼리 추가
+    must_queries.append({
+        "bool": {
+            "should": [
+                {
+                    "match": {
+                        "question": {
+                            "query": query,
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                },
+                {
+                    "script_score": {
+                        "query": {
+                            "match_all": {}
+                        },
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "params": {
+                                "query_vector": query_vector
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    })
 
     response = es.search(
         index=index_name,
         body={
             "query": {
                 "bool": {
-                    "should": should_queries + [
-                        {
-                            "script_score": {
-                                "query": {
-                                    "match_all": {}
-                                },
-                                "script": {
-                                    "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-                                    "params": {
-                                        "query_vector": query_vector
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "must": must_queries  # 구성된 쿼리 추가
                 }
             },
-            "size": 10  # 관련 문서 10개를 가져옴
+            "size": 10
         }
     )
 
@@ -255,13 +252,12 @@ def create_newQ(job: str, type: str) -> dict:
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-#          index_name = 'new_personality'
+        # index_name = 'new_personality'
         index_name = 'test_rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
     related_docs = searchDocs_generate(job, index_name, type)
-    # print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)

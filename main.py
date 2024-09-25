@@ -439,7 +439,6 @@ async def newQuestion_evaluete(
 
     return JSONResponse(content=result)
 
-
 @app.post("/search_resumes_nori")
 async def search_resumes_nori(query:str=Form(...)):
     result = search_doc_nori(query)
@@ -450,3 +449,4 @@ async def search_resumes_nori(query:str=Form(...)):
 @app.delete("/reset_resumes_nori")
 async def delete_resumes_nori():
     delete_docs()
+
