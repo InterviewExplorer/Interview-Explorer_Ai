@@ -33,7 +33,7 @@ from module.openai_basic import create_basic_question
 from module.openai_each import assessment_each
 from module.openai_average import calculate_average
 import json
-
+from module.nori_test import  search_doc_nori, delete_docs
 from rag.rag_createNew import create_newQ
 from rag.rag_evaluateNew import evaluate_newQ
 
@@ -438,3 +438,15 @@ async def newQuestion_evaluete(
     result = evaluate_newQ(question, answer, years, job, type)
 
     return JSONResponse(content=result)
+
+
+@app.post("/search_resumes_nori")
+async def search_resumes_nori(query:str=Form(...)):
+    result = search_doc_nori(query)
+    
+    return result
+
+
+@app.delete("/reset_resumes_nori")
+async def delete_resumes_nori():
+    delete_docs()
