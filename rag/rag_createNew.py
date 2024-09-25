@@ -47,17 +47,11 @@ def get_vector(text):
     return outputs.last_hidden_state[0][0].numpy()
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
-def searchDocs_generate(query, index_name, type):
-    print("query", query)
-    
-    today_str, thirty_days_ago_str = get_date_range(30)  # 항상 날짜를 가져옴
-    print("오늘 날짜: ", today_str, "30일 전 까지의 날짜: ", thirty_days_ago_str)
+def searchDocs_generate(query, index_name, type, explain=True, profile=True):
+    today_str, thirty_days_ago_str = get_date_range(30)
 
-    # 쿼리를 벡터로 변환
-    query_vector = get_vector(query).tolist()
-
-    # 기본 쿼리 구성
-    must_queries = []
+    query_vector = get_vector(query).tolist()   # 쿼리를 벡터로 변환    
+    must_queries = []                           # 기본 쿼리 구성
 
     # type이 "behavioral"인 경우 날짜 조건 추가
     if type == "behavioral":
@@ -107,12 +101,30 @@ def searchDocs_generate(query, index_name, type):
                     "must": must_queries  # 구성된 쿼리 추가
                 }
             },
-            "size": 10
+            "size": 10,
+            "explain": explain,
+            "profile": profile
         }
     )
 
     hits = response['hits']['hits']
     return [hit['_source']['question'] for hit in hits]
+
+    # # 검색된 문서 출력
+    # hits = response['hits']['hits']
+    # for i, hit in enumerate(hits):
+    #     print(f"\nDocument {i+1}:")
+    #     print(f"Question: {hit['_source']['question']}")
+        
+    #     # explain 옵션이 True일 경우 value와 description만 출력
+    #     if explain and '_explanation' in hit:
+    #         explanation = hit['_explanation']
+    #         value = explanation.get('value', 'N/A')  # value 값 추출
+            
+    #         print(f"Explanation Value: {value}")
+
+    # # 질문을 리스트로 반환
+    # return [hit['_source']['question'] for hit in hits]
 
 def generate_questions(job, type, combined_context, num_questions):
     if type == "technical":
@@ -148,7 +160,6 @@ def generate_questions(job, type, combined_context, num_questions):
         - Only include the values corresponding to the questions in the output format.
         - Do not include any other text, numbers, or explanations.
         - Refer to users as '면접자'.
-        - Please append the following sentence in Korean to the end of all questions: 'If you do not know this technology, please tell me about a technology or paper you have recently found interesting.'
 
         # Output Format
         {{

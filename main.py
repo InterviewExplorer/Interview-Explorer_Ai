@@ -36,6 +36,8 @@ import json
 from module.nori_test import  search_doc_nori, delete_docs
 from rag.rag_createNew import create_newQ
 from rag.rag_evaluateNew import evaluate_newQ
+from module.openai_contentSummary import summaryOfContent
+from rag.rag_resumeTest import resume_test
 
 app = FastAPI()
 
@@ -417,10 +419,14 @@ async def create_upload_file_behavioral(
 
 @app.post("/newQ_create")
 async def newQuestion_create(job: str = Form(...), type: str = Form(...), answers: str = Form(...)):
-    if not job or not type:
-        raise HTTPException(status_code=400, detail="직업과 타입은 필수 입력 항목입니다.")
+    if not job or not type or not answers:
+        raise HTTPException(status_code=400, detail="직업, 타입, 답변은 필수 입력 항목입니다.")
+    
+    # 전달받은 답변 내용 요약해서 value 값만 전달
+    resultOfSummary = summaryOfContent(answers)
+    summaryOfAnswers = resultOfSummary.get('Summary', '')
 
-    result = create_newQ(job, type, answers)
+    result = create_newQ(job, type, summaryOfAnswers)
 
     return JSONResponse(content=result)
 
@@ -445,8 +451,14 @@ async def search_resumes_nori(query:str=Form(...)):
     
     return result
 
-
 @app.delete("/reset_resumes_nori")
 async def delete_resumes_nori():
     delete_docs()
 
+
+@app.post("/test")
+async def test(query: str = Form(...)):
+
+    result = resume_test(query)
+
+    return JSONResponse(content=result)
