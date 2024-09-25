@@ -128,11 +128,11 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
 
             response_content = completion.choices[0].message.content
             result = json.loads(response_content)
-            
+
             # Ensure the evaluation score is a number
             if isinstance(result.get("score"), str) and result["score"].isdigit():
                 result["score"] = int(result["score"])
-            
+
             return result
         except json.JSONDecodeError as e:
             print(f"JSON 파싱 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")

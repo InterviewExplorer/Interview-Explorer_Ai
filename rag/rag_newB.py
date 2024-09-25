@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -12,7 +14,7 @@ load_dotenv()
 # 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
 INDEX_NAME = 'test_rag_behavioral'
-URL = 'https://n.news.naver.com/mnews/article/001/0014944385'
+URL = 'https://n.news.naver.com/mnews/article/092/0002346563'
 
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
@@ -29,11 +31,21 @@ def fetch_questions(url):
     body_text = ' '.join([tag.get_text().strip() for tag in body_paragraphs])
     timestamp_text = timestamp_tag.get_text().strip() if timestamp_tag else "시간 정보 없음"
 
+    # 날짜만 추출하기
+    if timestamp_text != "시간 정보 없음":
+        # "2024.09.24. 오후 10:00"에서 날짜만 추출
+        date_str = timestamp_text.split('.')[0:3]  # "2024", "09", "24" 추출
+        formatted_date = '-'.join(date_str)  # "2024-09-24"로 합치기
+    else:
+        formatted_date = None
+
     print("header_text", header_text)
     print("body_text", body_text)
     print("timestamp_text", timestamp_text)
+    print("formatted_date", formatted_date)
 
-    return header_text + ' ' + timestamp_text + ' ' + body_text
+    return header_text + ' ' + (formatted_date if formatted_date else "날짜 없음") + ' ' + body_text, formatted_date
+    # return header_text + ' ' + timestamp_text + ' ' + body_text
     # return header_text
 
 # 텍스트 분할
@@ -82,11 +94,12 @@ def get_next_id(index_name):
 # Elasticsearch에 문서 추가
 def index_documents(index_name, questions):
     next_id = get_next_id(index_name)
-    for i, question in enumerate(questions, start=next_id):
+    for i, (question, date_field) in enumerate(questions, start=next_id):
         vector = get_vector(question).tolist()
         doc = {
             'question': question,
-            'vector': vector
+            'vector': vector,
+            'date_field': date_field
         }
         es.index(index=index_name, id=i, body=doc)
 
@@ -111,16 +124,38 @@ def print_text_from_index():
     else:
         print("No documents found.")
 
+# def main():
+#     # 웹에서 질문 데이터 추출 및 분할
+#     content = fetch_questions(URL)
+#     split_contents = split_text(content)
+#
+#     # # 인덱스 생성
+#     create_index()
+#
+#     # 문서 인덱싱
+#     index_documents(INDEX_NAME, split_contents)
+#
+#     print(f"총 {len(split_contents)}개의 청크로 분할되었습니다.")
+#     for i, chunk in enumerate(split_contents, 1):
+#         print(f"\n--- 청크 {i} ---")
+#         print(chunk)
+#
+#     # 문서 확인
+#     print_text_from_index()
+#
+# if __name__ == '__main__':
+#     main()
+
 def main():
     # 웹에서 질문 데이터 추출 및 분할
-    content = fetch_questions(URL)
+    content, formatted_date = fetch_questions(URL)
     split_contents = split_text(content)
 
     # # 인덱스 생성
     create_index()
 
     # 문서 인덱싱
-    index_documents(INDEX_NAME, split_contents)
+    index_documents(INDEX_NAME, [(chunk, formatted_date) for chunk in split_contents])
 
     print(f"총 {len(split_contents)}개의 청크로 분할되었습니다.")
     for i, chunk in enumerate(split_contents, 1):
