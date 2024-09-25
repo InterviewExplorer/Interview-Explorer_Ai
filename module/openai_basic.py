@@ -62,6 +62,7 @@ def create_basic_question(job, year, interviewType):
         - Place the generated questions under the 'collaboration_communication' section in the Output Format.
 
         # Policy
+        - Ask for specific experiences or examples in the question.
         - Questions should be answerable through verbal explanation.
         - Write your questions in Korean only.
         - Do not ask for code examples.
