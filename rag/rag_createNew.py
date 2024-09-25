@@ -48,7 +48,8 @@ def get_vector(text):
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_generate(query, index_name, type):
-
+    print("query", query)
+    
     today_str, thirty_days_ago_str = get_date_range(30)  # 항상 날짜를 가져옴
     print("오늘 날짜: ", today_str, "30일 전 까지의 날짜: ", thirty_days_ago_str)
 
@@ -247,7 +248,7 @@ def get_random_samples(data, sample_size=10):
     return random.sample(data, min(sample_size, len(data)))
 
 # 새로운 질문을 생성하는 함수
-def create_newQ(job: str, type: str) -> dict:
+def create_newQ(job: str, type: str, answers: str) -> dict:
     # type에 따라 INDEX_NAME 변경
     if type == 'technical':
         index_name = 'new_technology'
@@ -257,7 +258,8 @@ def create_newQ(job: str, type: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = searchDocs_generate(job, index_name, type)
+    related_docs = searchDocs_generate(answers, index_name, type)
+    print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)

@@ -416,11 +416,11 @@ async def create_upload_file_behavioral(
     return JSONResponse(content=result)
 
 @app.post("/newQ_create")
-async def newQuestion_create(job: str = Form(...), type: str = Form(...)):
+async def newQuestion_create(job: str = Form(...), type: str = Form(...), answers: str = Form(...)):
     if not job or not type:
         raise HTTPException(status_code=400, detail="직업과 타입은 필수 입력 항목입니다.")
 
-    result = create_newQ(job, type)
+    result = create_newQ(job, type, answers)
 
     return JSONResponse(content=result)
 
