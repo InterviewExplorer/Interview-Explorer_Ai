@@ -62,6 +62,7 @@ def create_basic_question(job, year, interviewType):
         - Place the generated questions under the 'collaboration_communication' section in the Output Format.
 
         # Policy
+        - Ask for specific experiences or examples in the question.
         - Questions should be answerable through verbal explanation.
         - Write your questions in Korean only.
         - Do not ask for code examples.
@@ -108,25 +109,31 @@ def create_basic_question(job, year, interviewType):
 
         # Task1
         - Generate 10 questions to assess the interviewee's self-motivation and passion.
+        - Ask specific questions about how to motivate oneself, how to maintain motivation, what efforts are made to achieve goals, and the challenges and success stories encountered in that process.
         - Place the generated questions under the 'self_motivation' section in the Output Format.
 
         # Task2
         - Generate 10 questions to assess the interviewee's self-awareness.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Example : How do you perceive your strengths and weaknesses and what efforts are you making to improve them?
+        - Example : In which part of the work you do you feel you need improvement and how have you tried to improve?
+        - Example : How do you accept feedback when you receive it, and how do you adjust your behavior and attitude?
+        - Place the generated questions under the 'self_awareness' section in the Output Format.
 
         # Task3
         - Generate 10 questions to assess the interviewee's interpersonal-relationships.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'interpersonal_relationships' section in the Output Format.
 
         # Task4
         - Generate 10 questions to assess the interviewee's adaptability.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Place the generated questions under the 'adaptability' section in the Output Format.
 
         # Task5
         - Generate 10 questions to assess the interviewee's honesty.
-        - Place the generated questions under the 'self_motivation' section in the Output Format.
+        - Ask specific questions about experiences and how to deal with dishonest situations, experiences and how to deal with mistakes during work, lessons learned along the way, and how to respond when a team member shows an unfaithful attitude.
+        - Place the generated questions under the 'honesty' section in the Output Format.
 
         # Policy
+        - Ask for specific experiences or examples in the question.
         - Questions should be answerable through verbal explanation.
         - Write your questions in Korean only.
         - Responses must be in JSON format.
@@ -185,7 +192,7 @@ def create_basic_question(job, year, interviewType):
         elif interviewType == "behavioral":
             categories = [
                 "self_motivation", 
-                "self_awareness" 
+                "self_awareness",
                 "interpersonal_relationships",
                 "adaptability", 
                 "honesty", 

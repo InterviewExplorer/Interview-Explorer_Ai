@@ -128,19 +128,21 @@ def generate_questions(job, type, combined_context, num_questions):
         - Context: {combined_context}
 
         # Instructions
-        - Generate {num_questions} unique questions to assess the user's interest in new technologies related to {job}.
-        - Generate light-level questions about technology related to the {job}.
+        - Generate questions to assess the level of interest in new technologies related to {job}.
         - The questions should focus on concepts or the degree of interest.
         - Specify the name of a newly released technology in each question.
-        - Only ask questions related to developers or the IT field. Do not ask questions about other fields such as art creation, life sciences, etc.
+        - Please ask questions that focus solely on the concept of the technology, and if the interviewee has any information about it, request them to explain.
+        - Provide a brief explanation of the presented technology, then ask a derived question.
 
         # Example
+        - Have you come across any technologies or papers recently that you found interesting or enjoyable?
         - How do you think the free availability of MLOps platforms positively impacts the developer community?
-        - Have you heard of OpenAI's 'Strawberry' project? How do you think this project could contribute to the advancement of AI?
-        - Have you heard of the recently announced 'Mistral NeMo'? What benefits could this technology offer to developers?
+        - Have you heard of OpenAI's 'Strawberry' project?
+        - Have you heard of the recently announced 'Mistral NeMo'? If you know anything about 'Mistral NeMo,' please explain it.
         - What do you think about the impact of AI model price reductions on developers?
 
         # Policy
+        - Generate {num_questions} unique questions
         - Questions should be answerable through verbal explanation.
         - Write your questions in Korean only.
         - Do not ask for code examples.
@@ -148,6 +150,7 @@ def generate_questions(job, type, combined_context, num_questions):
         - Only include the values corresponding to the questions in the output format.
         - Do not include any other text, numbers, or explanations.
         - Refer to users as '면접자'.
+        - Please append the following sentence in Korean to the end of all questions: 'If you do not know this technology, please tell me about a technology or paper you have recently found interesting.'
 
         # Output Format
         {{
