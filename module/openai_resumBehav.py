@@ -85,8 +85,8 @@ def behavioral_resume(job, years, pdf_file=None, max_retries=3):
                 formatted_questions = {}
                 question_keys = list(questions.keys())
                 if len(question_keys) >= 2:
-                    formatted_questions["Q6"] = questions[question_keys[0]]
-                    formatted_questions["Q7"] = questions[question_keys[1]]
+                    formatted_questions["Q1"] = questions[question_keys[0]]
+                    formatted_questions["Q2"] = questions[question_keys[1]]
                 else:
                     raise ValueError("Not enough questions in the response")
                 
@@ -106,8 +106,8 @@ def behavioral_resume(job, years, pdf_file=None, max_retries=3):
     if questions is None:
         # If all attempts fail, return a default structure
         default_questions = {
-            "Q6": "여섯 번째 질문을 생성하는 데 문제가 발생했습니다.",
-            "Q7": "일곱 번째 질문을 생성하는 데 문제가 발생했습니다."
+            "Q1": "여섯 번째 질문을 생성하는 데 문제가 발생했습니다.",
+            "Q2": "일곱 번째 질문을 생성하는 데 문제가 발생했습니다."
         }
         return default_questions
     

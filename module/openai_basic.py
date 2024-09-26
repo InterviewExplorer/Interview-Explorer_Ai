@@ -124,13 +124,13 @@ def create_basic_question(job, year, interviewType):
         - Place the generated questions under the 'interpersonal_relationships' section in the Output Format.
 
         # Task4
-        - Generate 10 questions to assess the interviewee's adaptability.
-        - Place the generated questions under the 'adaptability' section in the Output Format.
-
-        # Task5
         - Generate 10 questions to assess the interviewee's honesty.
         - Ask specific questions about experiences and how to deal with dishonest situations, experiences and how to deal with mistakes during work, lessons learned along the way, and how to respond when a team member shows an unfaithful attitude.
         - Place the generated questions under the 'honesty' section in the Output Format.
+
+        # Task5
+        - Generate 10 questions to assess the interviewee's adaptability.
+        - Place the generated questions under the 'adaptability' section in the Output Format.
 
         # Policy
         - Ask for specific experiences or examples in the question.
@@ -153,11 +153,11 @@ def create_basic_question(job, year, interviewType):
                 ""
                 ...
             ],
-            "adaptability" : [
+            "honesty" : [
                 ""
                 ...
             ],
-            "honesty" : [
+            "adaptability" : [
                 ""
                 ...
             ],
@@ -181,6 +181,7 @@ def create_basic_question(job, year, interviewType):
         result = json.loads(response_content)
 
         categories = []
+
         if interviewType == "technical":
             categories = [
                 "technical_understanding", 
@@ -194,12 +195,13 @@ def create_basic_question(job, year, interviewType):
                 "self_motivation", 
                 "self_awareness",
                 "interpersonal_relationships",
+                "honesty",
                 "adaptability", 
-                "honesty", 
             ]
+            # behavioral 인터뷰의 경우 시작 인덱스는 1 (기본값)
 
         selected_questions = {}
-        for index, category in enumerate(categories, start=1):
+        for index, category in enumerate(categories, start=3):
             questions_list = result.get(category, [])
             if questions_list:
                 selected_question = random.choice(questions_list)

@@ -79,6 +79,8 @@ async def process_audio(file: UploadFile = File(...)):
         # MP3 파일 삭제 (옵션: 디스크 공간 절약)
         os.remove(audio_output_path)
 
+        print("추출된 답변", transcript)
+
         return JSONResponse(content={
             "status": "success",
             "message": "MP3 파일의 텍스트가 추출되었습니다.",
@@ -419,6 +421,11 @@ async def create_upload_file_behavioral(
 
 @app.post("/newQ_create")
 async def newQuestion_create(job: str = Form(...), type: str = Form(...), answers: str = Form(...)):
+
+    print("job: ", job)
+    print("type: ", type)
+    print("answers: ", answers) 
+
     if not job or not type or not answers:
         raise HTTPException(status_code=400, detail="직업, 타입, 답변은 필수 입력 항목입니다.")
     
@@ -427,6 +434,8 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
     summaryOfAnswers = resultOfSummary.get('Summary', '')
 
     result = create_newQ(job, type, summaryOfAnswers)
+
+    # result = create_newQ(job, type, answers)
 
     return JSONResponse(content=result)
 

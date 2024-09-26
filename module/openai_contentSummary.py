@@ -26,7 +26,7 @@ def summaryOfContent(content: str) -> dict:
     You are an expert in summarizing.
 
     # Task
-    - Summarize {content} into six lines or less.
+    - Summarize {content} into 700 bytes or less.
     
     # Policy
     - Never add anything that is not in {content}.
