@@ -47,18 +47,13 @@ def get_vector(text):
     return outputs.last_hidden_state[0][0].numpy()
 
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
-def searchDocs_generate(query, index_name, type):
+def searchDocs_generate(job: str, answers: str, index_name: str, type: str, explain=True, profile=True):
+    today_str, thirty_days_ago_str = get_date_range(30)
 
-    today_str, thirty_days_ago_str = get_date_range(30)  # 항상 날짜를 가져옴
-    print("오늘 날짜: ", today_str, "30일 전 까지의 날짜: ", thirty_days_ago_str)
-
-    # 쿼리를 벡터로 변환
-    query_vector = get_vector(query).tolist()
-
-    # 기본 쿼리 구성
+    combined_query = f"{job} {answers}"
+    query_vector = get_vector(combined_query).tolist()
     must_queries = []
 
-    # type이 "behavioral"인 경우 날짜 조건 추가
     if type == "behavioral":
         must_queries.append({
             "range": {
@@ -69,14 +64,13 @@ def searchDocs_generate(query, index_name, type):
             }
         })
 
-    # 질문과 벡터 쿼리 추가
     must_queries.append({
         "bool": {
             "should": [
                 {
                     "match": {
                         "question": {
-                            "query": query,
+                            "query": combined_query,
                             "fuzziness": "AUTO"
                         }
                     }
@@ -103,15 +97,45 @@ def searchDocs_generate(query, index_name, type):
         body={
             "query": {
                 "bool": {
-                    "must": must_queries  # 구성된 쿼리 추가
+                    "must": must_queries
                 }
             },
-            "size": 10
+            "size": 10,
+            "explain": explain,
+            "profile": profile
         }
     )
 
     hits = response['hits']['hits']
+    
+    print("\n유사성 판단 근거:")
+    for i, hit in enumerate(hits):
+        print(f"\n문서 {i+1}:")
+        print(f"질문: {hit['_source']['question']}")
+        print(f"유사도 점수: {hit['_score']:.2f}")
+        
+        if '_explanation' in hit:
+            explanation = hit['_explanation']
+            print("유사성 판단 이유:")
+            print_human_readable_explanation(explanation)
+
     return [hit['_source']['question'] for hit in hits]
+
+def print_human_readable_explanation(explanation):
+    if 'description' in explanation:
+        desc = explanation['description'].lower()
+        if 'weight' in desc:
+            print(f"- 텍스트 매칭 점수: {explanation['value']:.2f}")
+        elif 'script score' in desc:
+            print(f"- 벡터 유사도 점수: {explanation['value']:.2f}")
+        elif 'sum of' in desc:
+            print(f"- 총 유사도 점수: {explanation['value']:.2f}")
+        elif 'product of' in desc:
+            print(f"- 최종 유사도 점수: {explanation['value']:.2f}")
+    
+    if 'details' in explanation:
+        for detail in explanation['details']:
+            print_human_readable_explanation(detail)
 
 def generate_questions(job, type, combined_context, num_questions):
     if type == "technical":
@@ -130,6 +154,7 @@ def generate_questions(job, type, combined_context, num_questions):
         - Specify the name of a newly released technology in each question.
         - Please ask questions that focus solely on the concept of the technology, and if the interviewee has any information about it, request them to explain.
         - Provide a brief explanation of the presented technology, then ask a derived question.
+        - Only ask questions about fields related to {job}.
 
         # Example
         - Have you come across any technologies or papers recently that you found interesting or enjoyable?
@@ -147,7 +172,6 @@ def generate_questions(job, type, combined_context, num_questions):
         - Only include the values corresponding to the questions in the output format.
         - Do not include any other text, numbers, or explanations.
         - Refer to users as '면접자'.
-        - Please append the following sentence in Korean to the end of all questions: 'If you do not know this technology, please tell me about a technology or paper you have recently found interesting.'
 
         # Output Format
         {{
@@ -189,7 +213,7 @@ def generate_questions(job, type, combined_context, num_questions):
         - Recently, AI technology is being used to interpret health checkup results. What are your thoughts on the positive impact these technologies are having on personal health management? And what do you think are the ethical issues that may arise in this regard?
         - Naver is collaborating with Saudi Arabia to develop an Arabic-based macrolanguage model. What are your thoughts on the impact of global collaboration on technological advancement?
         - T Map has launched an AI location recommendation service. What do you think about the impact of AI on our choices and the problems it may cause?
-        - It is said that a smart speaker developed by KAIST can help manage mental health. What are your thoughts on the impact of technology on a person’s mental health?
+        - It is said that a smart speaker developed by KAIST can help manage mental health. What are your thoughts on the impact of technology on a person's mental health?
         - SK Hynix has installed its memory solution into open source Linux. What are your thoughts on the impact of open source technology on industry development?
 
         # Output Format
@@ -247,17 +271,19 @@ def get_random_samples(data, sample_size=10):
     return random.sample(data, min(sample_size, len(data)))
 
 # 새로운 질문을 생성하는 함수
-def create_newQ(job: str, type: str) -> dict:
+def create_newQ(job: str, type: str, answers: str) -> dict:
     # type에 따라 INDEX_NAME 변경
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        # index_name = 'new_personality'
         index_name = 'test_rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = searchDocs_generate(job, index_name, type)
+    print("answers", answers)
+
+    related_docs = searchDocs_generate(job, answers, index_name, type)
+    print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
