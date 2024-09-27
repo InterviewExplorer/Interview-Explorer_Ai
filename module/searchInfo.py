@@ -1,108 +1,135 @@
 import os
-import numpy as np
-import torch
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from elasticsearch import Elasticsearch
-from transformers import BertTokenizer, BertModel
+from sentence_transformers import SentenceTransformer
+import re
+from collections import defaultdict
 
+# Elasticsearch 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-INDEX_NAME = 'kookoo'
+INDEX_NAME = 'pdf_array'
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
-# BERT 모델 로드
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertModel.from_pretrained('bert-base-uncased')
+# Sentence Transformer 모델 로드
+model = SentenceTransformer('all-MiniLM-L6-v2')  # 경량화된 모델 사용
 
-def get_vector(text):
-    inputs = tokenizer(text, return_tensors='pt')
-    with torch.no_grad():
-        outputs = model(**inputs)
-    return outputs.last_hidden_state[0][0].numpy()
+def get_vector(query):
+    """
+    Sentence Transformer를 이용해 쿼리를 벡터화하는 함수
+    """
+    return model.encode(query)
 
-def search_resume_info(query):
-    # 쿼리를 벡터로 변환
-    query_vector = get_vector(query).tolist()
+async def search_resume_info(source_value):
+    print(f"Searching for source value: {source_value}")
 
-    # 벡터 검색 쿼리
-    knn_query = {
-        "knn": {
-            "field": "vector",  # 벡터 필드명
-            "query_vector": query_vector,
-            "k": 10  # 결과의 개수를 제한
+    keywords = ["name", "date_of_birth", "personality_keywords", "programming_languages", "frontend", "backend", "database", "tools"]
+    best_results = {}
+
+    for keyword in keywords:
+        query_vector = get_vector(keyword)
+
+        knn_query = {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "source": source_value
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "knn": {
+                            "field": "vector",
+                            "query_vector": query_vector.tolist(),
+                            "k": 10,  # KNN에서 가장 높은 점수 10개
+                            "num_candidates": 100
+                        }
+                    }
+                ]
+            }
         }
+
+        response = es.search(
+            index=INDEX_NAME,
+            body={"query": knn_query, "_source": ["resume", "source"], "size": 10}
+        )
+
+        if not response['hits']['hits']:
+            print(f"No hits found for keyword: {keyword}")
+            continue
+
+        # 가장 점수가 높은 검색 결과
+        best_hit = max(response['hits']['hits'], key=lambda hit: hit['_score'])
+        print(f"Best hit for keyword '{keyword}': {best_hit}")
+
+        # resume과 source 추출
+        resume = best_hit['_source'].get('resume', 'Invalid resume format')
+        source = best_hit['_source'].get('source', '')
+
+        # resume에서 각 키워드에 맞는 값을 정규식으로 추출
+        extracted_info = extract_info_from_resume(keyword, resume)
+
+        # best_results에 저장
+        if extracted_info:
+            best_results[keyword] = {
+                "source": source,
+                **extracted_info
+            }
+
+    # 최종 결과 통합
+    return integrate_results(best_results)
+
+def extract_info_from_resume(keyword, resume):
+    """
+    주어진 키워드에 따라 resume 필드에서 적절한 정보를 추출하는 함수
+    여러 가능한 키워드 패턴을 검사합니다.
+    """
+    patterns = {
+        "name": [r'"name"\s*:\s*"([^"]+)"'],
+        "date_of_birth": [r'"date_of_birth"\s*:\s*"([^"]+)"', r'"birth_date"\s*:\s*"([^"]+)"'],
+        "personality_keywords": [r'"personality_keywords"\s*:\s*"([^"]+)"', r'"personality"\s*:\s*"([^"]+)"'],
+        "programming_languages": [r'"languages"\s*:\s*"([^"]+)"', r'"programming_languages"\s*:\s*"([^"]+)"', r'"coding_languages"\s*:\s*"([^"]+)"'],
+        "frontend": [r'"front_end"\s*:\s*"([^"]+)"', r'"frontend"\s*:\s*"([^"]+)"'],
+        "backend": [r'"backend"\s*:\s*"([^"]+)"', r'"back_end"\s*:\s*"([^"]+)"'],
+        "database": [r'"dbms"\s*:\s*"([^"]+)"', r'"database"\s*:\s*"([^"]+)"', r'"databases"\s*:\s*"([^"]+)"'],
+        "tools": [r'"tools"\s*:\s*"([^"]+)"', r'"development_tools"\s*:\s*"([^"]+)"']
     }
 
-    # 키워드 검색 쿼리
-    keyword_query = {
-        "match": {
-            "resume": query  # 텍스트 필드에서 키워드 매칭
-        }
-    }
+    if keyword in patterns:
+        for pattern in patterns[keyword]:
+            match = re.search(pattern, resume)
+            if match:
+                return {keyword: match.group(1)}
 
-    # 두 쿼리를 함께 사용
-    response = es.search(
-        index=INDEX_NAME,
-        body={
-            "query": {
-                "bool": {
-                    "should": [
-                        knn_query,
-                        keyword_query
-                    ],
-                    "minimum_should_match": 1  # 최소 하나의 조건이 맞으면 결과 반환
-                }
-            },
-            "size": 10  # 검색 결과 수 제한
-        }
-    )
+    # 해당 키워드에 맞는 정보가 없을 경우
+    return None
 
-    if response['hits']['hits']:
-        vector_results = []
-        keyword_results = []
+def integrate_results(results):
+    """
+    검색 결과를 통합하여 각 소스(PDF)당 하나의 완성된 결과만 반환하는 함수
+    """
+    integrated = defaultdict(lambda: {
+        "source": "",
+        "name": "No name provided",
+        "date_of_birth": "No date of birth provided",
+        "personality_keywords": "No personality keywords provided",
+        "programming_languages": "No programming languages provided",
+        "frontend": "No frontend skills provided",
+        "backend": "No backend skills provided",
+        "database": "No database skills provided",
+        "tools": "No tools provided"
+    })
 
-        for hit in response['hits']['hits']:
-            source = hit['_source'].get('source', 'Unknown source')
-            resume = hit['_source'].get('resume', '')
-            score = hit['_score']
+    for keyword, result in results.items():
+        source = result.get("source", "")
+        integrated[source]["source"] = source
 
-            # 스코어가 1 이하인 결과는 무시
-            if score <= 1:
-                continue
+        # 각 필드가 result에 존재하는지 확인하면서 통합
+        for field in integrated[source].keys():
+            if field in result and result[field] != f"No {field} provided":
+                integrated[source][field] = result[field]
+    
+    return list(integrated.values())
 
-            # 벡터 검색 결과와 키워드 검색 결과 구분
-            if "vector" in hit.get('_source', {}):
-                vector_results.append((source, resume, score))
-            else:
-                keyword_results.append((source, resume, score))
-
-        # 벡터 검색 결과 출력
-        if vector_results:
-            print("### 벡터 검색 결과 ###")
-            for source, resume, score in vector_results:
-                print(f"Source: {source} (Score: {score})")
-                print(resume)
-                print("-" * 40)
-        else:
-            print("No vector search results found.")
-
-        # 키워드 검색 결과 출력
-        if keyword_results:
-            print("### 키워드 검색 결과 ###")
-            for source, resume, score in keyword_results:
-                print(f"Source: {source} (Score: {score})")
-                print(resume)
-                print("-" * 40)
-        else:
-            print("No keyword search results found.")
-    else:
-        print("No documents found.")
-
-if __name__ == "__main__":
-    # 검색 실행
-    search_terms = [
-        "name", "date_of_birth", "project", "personal history"
-    ]
-
-    for term in search_terms:
-        print(f"Searching for {term}:")
-        search_resume_info(term)
-        print("\n" + "="*50 + "\n")

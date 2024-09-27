@@ -468,9 +468,8 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
     # 각 PDF에 대해 텍스트 추출 및 JSON 변환
     for pdf_content, source in zip(pdf_contents, sources):
         # pdf 함수가 비동기 함수라면 await로 호출
-        result = await pdf(pdf_content)
-        main(result, source)
-        # info = await search_resume_info
+        # result = await pdf(pdf_content)
+        # main(result, source)
 
         # PDF 파일 삭제
         try:
@@ -479,5 +478,9 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
         except Exception as e:
             print(f"PDF 파일 삭제 실패: {e}")
 
+    for source in sources:
+        info = await search_resume_info(source)
+        results.append(info)
+        
     # 결과 반환
-    return JSONResponse("해윙")
+    return JSONResponse(results)

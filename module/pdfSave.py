@@ -1,14 +1,17 @@
 import json
 import os
 from typing import Union, List, Dict
-from transformers import BertTokenizer, BertModel
-import torch
 from elasticsearch import Elasticsearch
+from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import CharacterTextSplitter
 
+# Elasticsearch 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-INDEX_NAME = 'kookoo'
+INDEX_NAME = 'pdf_array'
 es = Elasticsearch([ELASTICSEARCH_HOST])
+
+# Sentence Transformer 모델 로드
+model = SentenceTransformer('all-MiniLM-L6-v2')  # 경량화된 모델 사용
 
 # 새로운 전처리 함수
 def preprocess_data(data: Union[str, List[str]]) -> List[str]:
@@ -40,7 +43,7 @@ def preprocess_data(data: Union[str, List[str]]) -> List[str]:
     
     return result
 
-# 기존의 split_text 함수 (변경 없음)
+# 기존의 split_text 함수
 def split_text(text):
     if isinstance(text, list):
         text = '\n'.join(text)
@@ -59,17 +62,14 @@ def split_text(text):
 
     return split_contents
 
-# 텍스트를 벡터로 변환 (변경 없음)
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertModel.from_pretrained('bert-base-uncased')
-
+# 텍스트를 벡터로 변환
 def get_vector(text):
-    inputs = tokenizer(text, return_tensors='pt')
-    with torch.no_grad():
-        outputs = model(**inputs)
-    return outputs.last_hidden_state[0][0].numpy()
+    """
+    Sentence Transformer를 이용해 텍스트를 벡터화하는 함수
+    """
+    return model.encode(text)
 
-# Elasticsearch에 인덱스 생성 (변경 없음)
+# Elasticsearch에 인덱스 생성
 def create_index():
     es.indices.create(
         index=INDEX_NAME,
@@ -79,7 +79,7 @@ def create_index():
                     "resume": {"type": "text"},
                     "vector": {
                         "type": "dense_vector",
-                        "dims": 768
+                        "dims": 384  # MiniLM 모델의 벡터 차원
                     }
                 }
             }
@@ -92,11 +92,11 @@ def get_next_id(index_name):
     response = es.count(index=index_name)
     return response['count']
 
-# Elasticsearch에 문서 추가 (변경 없음)
+# Elasticsearch에 문서 추가
 def index_documents(index_name, resumes, sources):
     next_id = get_next_id(index_name)
     for i, (resume, source) in enumerate(zip(resumes, sources), start=next_id):
-        vector = get_vector(resume).tolist()
+        vector = get_vector(resume).tolist()  # Sentence Transformer로 생성된 벡터
         doc = {
             'resume': resume,
             'vector': vector,
@@ -107,7 +107,6 @@ def index_documents(index_name, resumes, sources):
 def main(results, source):
     # split_text 대신 preprocess_data 사용
     preprocessed_contents = preprocess_data(results)
-
     print(preprocessed_contents)
 
     # 인덱스 생성
@@ -117,4 +116,5 @@ def main(results, source):
     index_documents(INDEX_NAME, preprocessed_contents, [source] * len(preprocessed_contents))
 
 if __name__ == '__main__':
+    # 예시 데이터와 출처 (실제 데이터를 넣어주셔야 합니다)
     main()

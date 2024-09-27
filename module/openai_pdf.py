@@ -37,6 +37,8 @@ async def pdf(pdf_path, max_retries=3):
     6. Follow this format for all data, including personal info, projects, education, etc.
     7. Ensure the output is properly formatted, with each key and value appearing on its own line.
     8. Analyze the person's personality, tendencies, and characteristics in the PDF file, define words that can express these, and create within 5 words. Keywords must be words that can identify the personality, personality, and characteristics in Korean.
+    9. Clearly distinguish between the full name and any other names, such as project names or aliases.
+    10 Don't create arrays to sort
 
     PDF content:
     {text}
