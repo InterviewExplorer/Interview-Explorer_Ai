@@ -201,7 +201,13 @@ def generate_questions(job, type, combined_context, num_questions):
         - Questions must be consistent with the title and content of the news.
         - When creating questions, you should not mention the interviewee's occupation.
         - The topic of the question must be a unique news topic that does not overlap.
-        - The questions you ask should focus on "What do you think?" rather than whether the interviewee knows this, and should be made so that even kindergarteners can answer.
+        - Questions should be designed so that even kindergarteners can answer them, rather than whether the interviewee knows them.
+        - The question must include one of the relevant elements, and questions must be created based on this element to judge the personality of the interviewee:
+            - Honesty (reliability)
+            - Interpersonal skills
+            - Self-motivation (passion)
+            - Adaptability
+            - Self-awareness
 
         # Policy
         - Write your questions in Korean only.
@@ -210,11 +216,9 @@ def generate_questions(job, type, combined_context, num_questions):
         - Refer to users as '면접자'.
          
         # Example
-        - Recently, AI technology is being used to interpret health checkup results. What are your thoughts on the positive impact these technologies are having on personal health management? And what do you think are the ethical issues that may arise in this regard?
-        - Naver is collaborating with Saudi Arabia to develop an Arabic-based macrolanguage model. What are your thoughts on the impact of global collaboration on technological advancement?
-        - T Map has launched an AI location recommendation service. What do you think about the impact of AI on our choices and the problems it may cause?
-        - It is said that a smart speaker developed by KAIST can help manage mental health. What are your thoughts on the impact of technology on a person's mental health?
-        - SK Hynix has installed its memory solution into open source Linux. What are your thoughts on the impact of open source technology on industry development?
+        - There are concerns that as AI technology develops, human jobs may decrease. How can you define and motivate your role in these changes?
+        - Based on recent environmental issues, what specific ways do you think individuals can contribute to environmental protection?
+        - Recently, communication problems within teams have been mentioned due to the spread of telecommuting. What are the measures to maintain smooth interpersonal relationships in non-face-to-face situations?
 
         # Output Format
         {{
