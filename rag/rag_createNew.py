@@ -216,9 +216,11 @@ def generate_questions(job, type, combined_context, num_questions):
         - Refer to users as '면접자'.
          
         # Example
-        - There are concerns that as AI technology develops, human jobs may decrease. How can you define and motivate your role in these changes?
-        - Based on recent environmental issues, what specific ways do you think individuals can contribute to environmental protection?
-        - Recently, communication problems within teams have been mentioned due to the spread of telecommuting. What are the measures to maintain smooth interpersonal relationships in non-face-to-face situations?
+        - What resources do you use to increase your motivation? Please share that experience.
+        - When you receive feedback, how do you take it and adjust your behavior or attitude accordingly?
+        - What activities or efforts have you done to strengthen teamwork?
+        - If you have ever made a mistake at work, tell me how you handled the situation.
+        - Tell us about how you adapted when the team's direction changed.
 
         # Output Format
         {{
