@@ -20,81 +20,7 @@ if gpt_model is None:
 # OpenAI 클라이언트 초기화 및 api키 등록
 client = OpenAI(api_key=api_key)
 
-def generate_model(question: str, years: str, job: str, type: str) -> dict:
-    if type == "technical":
-        prompt = f"""
-        # Role
-        You are a technical interview expert.
-
-        # Task
-        - Considering {job} and {years}, generate a ideal answer suitable for {question}.
-        
-        # Policy
-        - The ideal answer must include only content that can be orally described.
-        - Provide the answer in Korean.
-        - Place the score in the `model` value of the JSON output.
-        - Do not include any additional explanations beyond the specified output format.
-
-        # Output Format
-        {{
-            "model": ""
-        }}
-        """
-    elif type == "behavioral":
-        prompt = f"""
-        # Role
-        You are a behavioral interview expert.
-
-        # Task
-        - Generate the intent behind the question {question} for a behavioral interview with {years} of experience as a {job}
-        
-        # Policy
-        - Provide the answer in Korean.
-        - Place the intent in the `intention` value of the JSON output.
-        - Do not include any additional explanations beyond the specified output format.
-        - Refer to users as '면접자'.
-
-        # Output Format
-        {{
-            "intention": ""
-        }}
-        """
-    else:
-        raise ValueError("Invalid type provided. Must be 'technical' or 'behavioral'.")
-
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            completion = client.chat.completions.create(
-                model=gpt_model,
-                messages=[
-                    {"role": "system", "content": "You are a professional interviewer."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0
-            )
-
-            response_content = completion.choices[0].message.content
-            result = json.loads(response_content)
-            
-            return result
-        except json.JSONDecodeError as e:
-            print(f"JSON 파싱 실패, 재시도 중... (시도 {attempt + 1}/{max_retries})")
-            time.sleep(2)
-
-    return {"error": "JSONDecodeError"}
-
-    # 1. Check if the answer contains any technical content. If there is no technical content, score it as 0.
-    # 2. If the answer contains technical content, check whether it is directly related to the technology mentioned in the question. If the answer is not directly related to the technology in the question, assign a score of 30 or lower, depending on the content of the answer.
-    # 3. If the answer is directly related to the skills mentioned in the question, evaluate the level and appropriateness of the answer based on the interviewee's job and experience level, and assign a score between 0 and 100.
-    # 4. Assign a higher score the closer the interviewer's response is to the model answer.
-    # 5. Explain the reason for the assigned score, focusing only on the technical content. The explanation must be provided in Korean.
-    # 6. Do not mention any content related to the model answer in the explanation.
-    # 7. Generate the ideal answer for the question, considering the interviewer's role and experience, and reflecting the explained reason.
-    # 8. Evaluate the answer based on the following five criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
-    # 9. If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
-
-def generate_assessment(question: str, answer: str, years: str, job: str, type: str, result: str) -> dict:
+def generate_assessment(question: str, answer: str, years: str, job: str, type: str) -> dict:
     if type == "technical":
         prompt = f"""
         # Role
@@ -105,20 +31,29 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
         - Interviewer's role: {job}
         - Interviewer's experience level: {years} years
         - Interviewer's answer: {answer}
-        - Technical interview questions : {question}
-        - model answer : {result}
+        - Question : {question}
+
+        # Scoring Scale
+        A: Excellent
+        B: Good
+        C: Satisfactory
+        D: Poor
+        E: Unsatisfactory or No relevant content
+        F: No answer or No technical content
 
         # Instructions
-        - Evaluate the answers to the questions on a scale of 1 to 100, considering the interviewee's job role and level of experience.
-        - Assess only the technical aspects.
-        - Explain the reasoning behind the score given.
-        - Generate the ideal answer for the question, considering the interviewer's role and experience, and reflecting the explained reason.
+        - Score according to `Scoring Scale`.
+        - When explaining the reasons fr the points awarded, focus only on the technical content. The description must be provided in Korean.
+        - Do not include any contents related to 'Scoring Scale' or score in the explanation.
+        - Provide an ideal answer to the question, considering the interviewee's role and experience, reflecting the reason you explained.
+        - The ideal answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
         - Evaluate the answer based on the following five criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
         - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
         - Ensure the evaluation is detailed and justifiable.
         - Evaluate only the technical aspects of the answer. Do not consider personality, job fit, or organizational fit.
+        - The score must be evaluated strictly according to the 'Scoring Scale' and expressed as an alphabetical letter.
         - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
         - Responses must be in JSON format.
         - Place the score in the `score` value of the JSON output.
@@ -144,20 +79,36 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
     elif type == "behavioral":
         prompt = f"""
         # Role
-        You are an expert interviewer specializing in evaluating interpersonal aspects.
+        You are an expert on personality interviews.
 
-        # Task    
-        1. From an interpersonal interviewer’s perspective, explain the intention of ({question}) in 3 sentences or less.
-        2. Determine whether ({answer}) is an appropriate response to ({question}). If the answer is not related to the question, assign a score of 0.
-        3. Evaluate whether ({answer}) aligns with the intention of ({question}) and assign a score from 0 to 100.
-        4. Explain the reason for the assigned score. The explanation should focus solely on interpersonal aspects and be provided in Korean.
-        5. Evaluate the answer based on the following five criteria: honesty (reliability), interpersonal skills, self-motivation (passion), adaptability, and self-awareness. Assign a score between 1 and 100 for each criterion.
-        6. If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
+        # Task
+        Evaluate the answer based on the following criteria:
+        - Interviewer's role: {job}
+        - Interviewer's experience level: {years} years
+        - Interviewer's answer: {answer}
+        - Question : {question}
+
+        # Scoring Scale
+        A: Excellent
+        B: Good
+        C: Satisfactory
+        D: Poor
+        E: Unsatisfactory or No relevant content
+        F: No answer or No technical content
+
+        # Task
+        - Score according to `Scoring Scale`.
+        - When explaining the reasons for the points awarded, focus only on the personality aspects. The description must be provided in Korean.
+        - Do not include any contents related to 'Scoring Scale' or score in the explanation.
+        - Provide an ideal answer to the question, considering the interviewee's role and experience, reflecting the reason you explained.
+        - The ideal answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
+        - Evaluate the answer based on the following five criteria: honesty reliability, interpersonal skills, self motivation passion, adaptability, and self awareness. Assign a score between 1 and 100 for each criterion.
+        - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
         - Ensure the evaluation is detailed and justifiable.
-        - Evaluate only the interpersonal aspects of the answer.
-        - Do not consider the technical aspects.
+        - Evaluate only the interpersonal aspects of the answer. Do not consider the technical aspects.
+        - The score must be evaluated strictly according to the 'Scoring Scale' and expressed as an alphabetical letter.
         - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
         - Responses must be in JSON format.
         - Place the score in the `score` value of the JSON output.
@@ -170,6 +121,7 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
         {{
             "score": "",
             "explanation": "",
+            "intention": "",
             "criteria_scores": {{
                 "honesty_reliability": null,
                 "interpersonal_skills": null,
@@ -210,22 +162,8 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
     return {"error": "JSONDecodeError"}
 
 def assessment_each(question: str, answer: str, years: str, job: str, type: str) -> dict:
-    # 모범 답안 또는 질문의 의도 생성
-    modelData = generate_model(question, years, job, type)
-    print("@@@modelData", modelData)
-
-    # value값만 추출
-    result = ""
-    if type == "technical":
-        result = modelData.get("model", "")
-    elif type == "behavioral":
-        result = modelData.get("intention", "")
-
     # 평가 생성
-    assessmentData = generate_assessment(question, answer, years, job, type, result)
+    assessmentData = generate_assessment(question, answer, years, job, type)
     print("@@@assessmentData", assessmentData)
 
-    # 모범 답안 또는 질문의 의도와 평가 데이터 결합
-    combined_data = {**assessmentData, **modelData}
-    
-    return combined_data
+    return assessmentData

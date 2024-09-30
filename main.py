@@ -37,7 +37,6 @@ from module.nori_test import  search_doc_nori, delete_docs
 from rag.rag_createNew import create_newQ
 from rag.rag_evaluateNew import evaluate_newQ
 from module.openai_contentSummary import summaryOfContent
-from rag.rag_resumeTest import resume_test
 
 app = FastAPI()
 
@@ -79,7 +78,7 @@ async def process_audio(file: UploadFile = File(...)):
         # MP3 파일 삭제 (옵션: 디스크 공간 절약)
         os.remove(audio_output_path)
 
-        print("추출된 답변", transcript)
+        print("@@@@@추출된 답변", transcript)
 
         return JSONResponse(content={
             "status": "success",
@@ -464,10 +463,3 @@ async def search_resumes_nori(query:str=Form(...)):
 async def delete_resumes_nori():
     delete_docs()
 
-
-@app.post("/test")
-async def test(query: str = Form(...)):
-
-    result = resume_test(query)
-
-    return JSONResponse(content=result)
