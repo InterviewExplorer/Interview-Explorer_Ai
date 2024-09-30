@@ -100,7 +100,7 @@ def searchDocs_generate(job: str, answers: str, index_name: str, type: str, expl
                     "must": must_queries
                 }
             },
-            "size": 10,
+            "size": 50,
             "explain": explain,
             "profile": profile
         }
@@ -222,8 +222,7 @@ def generate_questions(job, type, combined_context, num_questions):
         - Refer to users as '면접자'.
          
         # Example
-        1. **Background Information**: "Recently, there was an incident in Cheonan where an 8-year-old girl swallowed detergent. The reason nearby hospitals refused treatment in this case was because the hospital did not have a pediatric emergency specialist. As a result, it had to be transported to Daejeon, 80km away."
-        2. **Question**: "What efforts do you think are needed to solve these problems?"
+        - Recently, there was an incident in Cheonan where an 8-year-old girl swallowed detergent. The reason nearby hospitals refused treatment in this case was because the hospital did not have a pediatric emergency specialist. As a result, it had to be transported to Daejeon, 80km away. What efforts do you think are needed to solve these problems?
 
         # Output Format
         {{
@@ -294,12 +293,13 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     # print("answers", answers)
 
     related_docs = searchDocs_generate(job, answers, index_name, type)
-    # print("related_docs", related_docs)
+    print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
         combined_context = " ".join(random_samples)
         num_questions = 10 if type == "technical" else 5
+        # num_questions = 10
         questions = generate_questions(job, type, combined_context, num_questions)
 
         return questions
