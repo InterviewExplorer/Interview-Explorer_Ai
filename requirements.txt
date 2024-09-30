@@ -47,11 +47,11 @@ jiter==0.5.0
 jsonpatch==1.33
 jsonpointer==3.0.0
 kiwisolver==1.4.5
-langchain==0.2.14
-langchain-community==0.2.15
-langchain-core==0.2.39
-langchain-text-splitters==0.2.2
-langsmith==0.1.106
+langchain==0.3.1
+langchain-community==0.3.1
+langchain-core==0.3.6
+langchain-text-splitters==0.3.0
+langsmith==0.1.129
 llvmlite==0.43.0
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
@@ -107,7 +107,7 @@ sympy==1.13.2
 tenacity==8.5.0
 tiktoken==0.7.0
 tokenizers==0.19.1
-torch==2.4.1
+torch==2.4.0
 torchaudio==2.4.0
 torchvision==0.19.0
 tqdm==4.66.5

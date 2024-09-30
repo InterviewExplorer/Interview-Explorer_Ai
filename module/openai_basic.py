@@ -175,7 +175,7 @@ def create_basic_question(job, year, interviewType):
         temperature=0,
     )
     response_content = completion.choices[0].message.content
-    print("response_content", response_content)
+    # print("response_content", response_content)
 
     try:
         result = json.loads(response_content)

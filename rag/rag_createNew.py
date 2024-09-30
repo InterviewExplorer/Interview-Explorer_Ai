@@ -108,16 +108,16 @@ def searchDocs_generate(job: str, answers: str, index_name: str, type: str, expl
 
     hits = response['hits']['hits']
     
-    print("\n유사성 판단 근거:")
-    for i, hit in enumerate(hits):
-        print(f"\n문서 {i+1}:")
-        print(f"질문: {hit['_source']['question']}")
-        print(f"유사도 점수: {hit['_score']:.2f}")
-        
-        if '_explanation' in hit:
-            explanation = hit['_explanation']
-            print("유사성 판단 이유:")
-            print_human_readable_explanation(explanation)
+    # print("\n유사성 판단 근거:")
+    # for i, hit in enumerate(hits):
+    #     print(f"\n문서 {i+1}:")
+    #     print(f"질문: {hit['_source']['question']}")
+    #     print(f"유사도 점수: {hit['_score']:.2f}")
+    #
+    #     if '_explanation' in hit:
+    #         explanation = hit['_explanation']
+    #         print("유사성 판단 이유:")
+    #         print_human_readable_explanation(explanation)
 
     return [hit['_source']['question'] for hit in hits]
 
@@ -194,14 +194,14 @@ def generate_questions(job, type, combined_context, num_questions):
         - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.        
         - Each question should be clearly structured and include detailed background information on recent social issues.
         - Questions should refer to specific news events and clearly state the news source or background.
-        - The interviewee may not be familiar with current social issues, so before asking questions, you should explain in detail what is being discussed and include additional explanations of relevant keywords.
+        - The interviewee may not be familiar with current social issues, so before asking questions, you should Provide a concise but clear explanation of the social issue, including key terms if necessary and include additional explanations of relevant keywords.
         - Questions should focus on assessing how the interviewee perceives the social issue.
         - Questions should encourage the interviewee to express their thoughts through verbal explanations.
         - The difficulty level of the questions should be such that the interviewee can answer even if they do not know much about the news.
-        - Questions must be consistent with the title and content of the news.
+            - Consistent with the key themes of the news.
         - When creating questions, you should not mention the interviewee's occupation.
         - The topic of the question must be a unique news topic that does not overlap.
-        - Questions should be designed so that even kindergarteners can answer them, rather than whether the interviewee knows them.
+        - Questions should be accessible enough for someone with little knowledge of the topic to provide an informed opinion
         - The question must include one of the relevant elements, and questions must be created based on this element to judge the personality of the interviewee:
             - Honesty (reliability)
             - Interpersonal skills
@@ -216,11 +216,11 @@ def generate_questions(job, type, combined_context, num_questions):
         - Refer to users as '면접자'.
          
         # Example
-        - What resources do you use to increase your motivation? Please share that experience.
-        - When you receive feedback, how do you take it and adjust your behavior or attitude accordingly?
-        - What activities or efforts have you done to strengthen teamwork?
-        - If you have ever made a mistake at work, tell me how you handled the situation.
-        - Tell us about how you adapted when the team's direction changed.
+        - **Honesty (reliability)**: "Please talk about how important it is to maintain trust during the feedback process with team members during a project. If you have an experience where you communicated honestly while giving and receiving feedback to achieve the team's goals, please share."
+        - **Interpersonal skills**: "You said that clear messaging and active feedback are important for effective communication. Please explain in detail what communication methods you used in the past to resolve misunderstandings within the team."
+        - **Self-motivation (passion)**: "You said that while learning Java, you gained a sense of accomplishment by dividing big goals into small steps. If you have recently experienced self-motivation in a similar way, please explain what it was like. What was the biggest challenge along the way and how did you overcome it?"
+        - **Adaptability**: "When team goals changed, you said you tried to realign priorities and keep everyone moving in the same direction. Please tell us specifically how you adapted and contributed in a situation where the team's goals or direction changed drastically."
+        - **Self-awareness**: "You mentioned that problems arose during the project due to insufficient code reviews. What did you learn from that experience and what efforts did you make to improve yourself afterward? Describe how the lessons learned from this experience had a positive impact on your team and project."
 
         # Output Format
         {{
@@ -286,10 +286,10 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    print("answers", answers)
+    # print("answers", answers)
 
     related_docs = searchDocs_generate(job, answers, index_name, type)
-    print("related_docs", related_docs)
+    # print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
