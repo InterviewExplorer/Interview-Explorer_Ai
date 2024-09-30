@@ -37,7 +37,6 @@ from module.indexClear import delete_docs
 from rag.rag_createNew import create_newQ
 from rag.rag_evaluateNew import evaluate_newQ
 from module.openai_contentSummary import summaryOfContent
-from rag.rag_resumeTest import resume_test
 from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
