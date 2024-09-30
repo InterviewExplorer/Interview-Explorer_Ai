@@ -100,7 +100,7 @@ def searchDocs_generate(job: str, answers: str, index_name: str, type: str, expl
                     "must": must_queries
                 }
             },
-            "size": 10,
+            "size": 50,
             "explain": explain,
             "profile": profile
         }
@@ -108,16 +108,16 @@ def searchDocs_generate(job: str, answers: str, index_name: str, type: str, expl
 
     hits = response['hits']['hits']
     
-    print("\n유사성 판단 근거:")
-    for i, hit in enumerate(hits):
-        print(f"\n문서 {i+1}:")
-        print(f"질문: {hit['_source']['question']}")
-        print(f"유사도 점수: {hit['_score']:.2f}")
-        
-        if '_explanation' in hit:
-            explanation = hit['_explanation']
-            print("유사성 판단 이유:")
-            print_human_readable_explanation(explanation)
+    # print("\n유사성 판단 근거:")
+    # for i, hit in enumerate(hits):
+    #     print(f"\n문서 {i+1}:")
+    #     print(f"질문: {hit['_source']['question']}")
+    #     print(f"유사도 점수: {hit['_score']:.2f}")
+    #
+    #     if '_explanation' in hit:
+    #         explanation = hit['_explanation']
+    #         print("유사성 판단 이유:")
+    #         print_human_readable_explanation(explanation)
 
     return [hit['_source']['question'] for hit in hits]
 
@@ -194,27 +194,35 @@ def generate_questions(job, type, combined_context, num_questions):
         - To assess the interviewer's personality and opinions, you must write {num_questions} unique, non-overlapping questions.        
         - Each question should be clearly structured and include detailed background information on recent social issues.
         - Questions should refer to specific news events and clearly state the news source or background.
-        - The interviewee may not be familiar with current social issues, so before asking questions, you should explain in detail what is being discussed and include additional explanations of relevant keywords.
+        - The interviewee may not be familiar with current social issues, so before asking questions, you should Provide a concise but clear explanation of the social issue, including key terms if necessary and include additional explanations of relevant keywords.
         - Questions should focus on assessing how the interviewee perceives the social issue.
         - Questions should encourage the interviewee to express their thoughts through verbal explanations.
         - The difficulty level of the questions should be such that the interviewee can answer even if they do not know much about the news.
-        - Questions must be consistent with the title and content of the news.
+            - Consistent with the key themes of the news.
         - When creating questions, you should not mention the interviewee's occupation.
-        - The topic of the question must be a unique news topic that does not overlap.
-        - The questions you ask should focus on "What do you think?" rather than whether the interviewee knows this, and should be made so that even kindergarteners can answer.
+        - Questions should be accessible enough for someone with little knowledge of the topic to provide an informed opinion
+        - Each question must be designed to assess one of the following elements, and the relationship to the element must be clearly stated:
+            - Honesty
+            - Interpersonal skills
+            - Self-motivation (passion)
+            - Adaptability
+            - Self-awareness
+        - You should not ask for your own experience.
+        - The background explanation must include why the event occurred and any relevant contributing factors, such as systemic issues, policy, or other causes.
+        - The entire output (Background Information and Question) must be formatted as a single JSON object, and each field must be written in a single line.
+        - The question should be about what they think rather than about improvements or solutions.
+        - The last phrase in your question doesn't specify which elements are included.
+        - Ensure that each question has a similar level of background detail, including what happened, why it happened, and any broader social implications.
 
         # Policy
+        - The entire JSON object must be formatted in a single line.
         - Write your questions in Korean only.
         - You must strictly adhere to the following JSON format.
         - Only include the values corresponding to the questions in the output format.
         - Refer to users as '면접자'.
          
         # Example
-        - Recently, AI technology is being used to interpret health checkup results. What are your thoughts on the positive impact these technologies are having on personal health management? And what do you think are the ethical issues that may arise in this regard?
-        - Naver is collaborating with Saudi Arabia to develop an Arabic-based macrolanguage model. What are your thoughts on the impact of global collaboration on technological advancement?
-        - T Map has launched an AI location recommendation service. What do you think about the impact of AI on our choices and the problems it may cause?
-        - It is said that a smart speaker developed by KAIST can help manage mental health. What are your thoughts on the impact of technology on a person's mental health?
-        - SK Hynix has installed its memory solution into open source Linux. What are your thoughts on the impact of open source technology on industry development?
+        - Recently, there was an incident in Cheonan where an 8-year-old girl swallowed detergent. The reason nearby hospitals refused treatment in this case was because the hospital did not have a pediatric emergency specialist. As a result, it had to be transported to Daejeon, 80km away. What efforts do you think are needed to solve these problems?
 
         # Output Format
         {{
@@ -268,7 +276,9 @@ def generate_questions(job, type, combined_context, num_questions):
 
 # 크롤링 데이터 랜덤으로 가져오기
 def get_random_samples(data, sample_size=10):
-    return random.sample(data, min(sample_size, len(data)))
+    samples = random.sample(data, min(sample_size, len(data)))
+    print(f"검색 문서 확인: {samples}")
+    return samples
 
 # 새로운 질문을 생성하는 함수
 def create_newQ(job: str, type: str, answers: str) -> dict:
@@ -280,7 +290,7 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    print("answers", answers)
+    # print("answers", answers)
 
     related_docs = searchDocs_generate(job, answers, index_name, type)
     print("related_docs", related_docs)
@@ -288,7 +298,8 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
         combined_context = " ".join(random_samples)
-        num_questions = 10
+        num_questions = 10 if type == "technical" else 5
+        # num_questions = 10
         questions = generate_questions(job, type, combined_context, num_questions)
 
         return questions

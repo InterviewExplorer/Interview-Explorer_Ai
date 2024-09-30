@@ -434,6 +434,7 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
     
     # 전달받은 답변 내용 요약해서 value 값만 전달
     resultOfSummary = summaryOfContent(answers)
+    print("요약 답변: ", resultOfSummary["Summary"])
     summaryOfAnswers = resultOfSummary.get('Summary', '')
 
     result = create_newQ(job, type, summaryOfAnswers)

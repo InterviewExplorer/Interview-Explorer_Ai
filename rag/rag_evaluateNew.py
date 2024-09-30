@@ -86,16 +86,47 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
     elif type == "behavioral":
         prompt = f"""
         # Role
-        You are the interviewer.
+        - You are an interviewer who specializes in personality interviews.
 
         # Task
-        Create {num_questions} technical questions based on the following criteria:
-        - User role: {job}
-        - Context: {combined_context}
+        - Determine whether {answer} is appropriate for {question}.
+        - I need to output as an integer how much of each element contains the answer to the question:
+            - Honesty (reliability)
+            - Interpersonal skills
+            - Self-motivation (passion)
+            - Adaptability
+            - Self-awareness
 
         # Instructions
-
+        - The integer must be a value between 1 and 100. 
+        - Any value less than 1 will be treated as null (no contribution).
+        
         # Policy
+        - Write your questions in Korean only.
+
+        # Definitions
+        - "score" must be an integer between 1 and 100, indicating how appropriate the answer {answer} is for the question {question}.
+        - "explanation" should clarify why the score for the answer {answer} to the question {question} was given.
+        - The value entered for "intention" should describe how much you know about recent issues and the purpose of the question {question}, focusing on one or more of the following factors if present:
+            - Honesty (reliability)
+            - Interpersonal skills
+            - Self-motivation (passion)
+            - Adaptability
+            - Self-awareness
+            
+        # Example
+        {{
+            "score": "75",
+            "explanation": "This response addresses both the positive impact of tax incentives on technicians and their limitations, and provides an in-depth analysis that goes beyond a simple positive or negative assessment. In particular, attracting talent over the long term is a complex combination of factors. “It’s great to highlight that tax benefits alone are not enough.",
+            "intention": "The intention of this question is to hear individual thoughts on the importance of securing human resources for the development of AI technology.",
+            "criteria_scores": {{
+                "honesty_reliability": 80,
+                "interpersonal_skills": null,
+                "self_motivation_passion": 60,
+                "adaptability": 75,
+                "self_awareness": null
+            }}
+        }}
 
         # Output Format
         {{
@@ -146,7 +177,7 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        index_name = 'new_personality'
+        index_name = 'test_rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 

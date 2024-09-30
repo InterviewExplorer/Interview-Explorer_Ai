@@ -30,7 +30,7 @@ def create_basic_question(job, year, interviewType):
         - User role: {job}
 
         # Instructions
-        - Generate questions that relate specific technologies, considering the {job} and {year} of experience.
+        - Generate questions that relate specific technologies, considering the job and experience.
         - Ensure that questions are relevant, clear, and focused on assessing technical knowledge.
         - Construct questions at a level appropriate for the years of experience provided.
         - Generate technical questions based on the user's role and experience level.
@@ -103,7 +103,7 @@ def create_basic_question(job, year, interviewType):
         - User role: {job}
 
         # Instructions
-        - Generate personality assessment questions considering the {job} and {year} of experience.
+        - Generate personality assessment questions considering the job and experience.
         - Ensure that questions are relevant, clear, and focused on assessing personality traits.
         - Ask the interviewee for specific experiences or examples in the questions.
 
@@ -175,7 +175,7 @@ def create_basic_question(job, year, interviewType):
         temperature=0,
     )
     response_content = completion.choices[0].message.content
-    print("response_content", response_content)
+    # print("response_content", response_content)
 
     try:
         result = json.loads(response_content)
