@@ -9,7 +9,7 @@ async def pdf(pdf_path, max_retries=3):
     load_dotenv()
 
     # Set up OpenAI API key
-    api_key = os.getenv("API_KEY2")
+    api_key = os.getenv("API_KEY")
     if api_key is None:
         raise ValueError("API_KEY is missing.")
     
