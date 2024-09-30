@@ -24,7 +24,7 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
     if type == "technical":
         prompt = f"""
         # Role
-        You are a technical interview expert.
+        You are a technical interviewer with expertise in conducting interviews.
 
         # Task
         Evaluate the answer based on the following criteria:
@@ -55,10 +55,11 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
         - Evaluate only the technical aspects of the answer. Do not consider personality, job fit, or organizational fit.
         - The score must be evaluated strictly according to the 'Scoring Scale' and expressed as an alphabetical letter.
         - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
+        - Provide a model answer that reflects the appropriate depth for the job role and experience level, in Korean.
         - Responses must be in JSON format.
         - Place the score in the `score` value of the JSON output.
         - Place the explanation in the `explanation` value of the JSON output.
-        - Place the ideal answer in the `ideal` value of the JSON output.
+        - Place the model answer in the `model` value of the JSON output.
         - Do not include any additional explanations beyond the specified output format.
         - Refer to users as '면접자'.
 
@@ -66,7 +67,7 @@ def generate_assessment(question: str, answer: str, years: str, job: str, type: 
         {{
             "score": "",
             "explanation": "",
-            "ideal": "",
+            "model": "",
             "criteria_scores": {{
                 "problem_solving": null,
                 "technical_understanding": null,

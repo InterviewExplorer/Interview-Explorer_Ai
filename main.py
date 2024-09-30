@@ -33,10 +33,14 @@ from module.openai_basic import create_basic_question
 from module.openai_each import assessment_each
 from module.openai_average import calculate_average
 import json
-from module.nori_test import  search_doc_nori, delete_docs
+from module.indexClear import delete_docs
 from rag.rag_createNew import create_newQ
 from rag.rag_evaluateNew import evaluate_newQ
 from module.openai_contentSummary import summaryOfContent
+from rag.rag_resumeTest import resume_test
+from module.pdfSave import main
+from module.openai_pdf import pdf
+from module.pdfSearch import search
 
 app = FastAPI()
 
@@ -430,6 +434,7 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
     
     # 전달받은 답변 내용 요약해서 value 값만 전달
     resultOfSummary = summaryOfContent(answers)
+    print("요약 답변: ", resultOfSummary["Summary"])
     summaryOfAnswers = resultOfSummary.get('Summary', '')
 
     result = create_newQ(job, type, summaryOfAnswers)
@@ -453,13 +458,50 @@ async def newQuestion_evaluete(
 
     return JSONResponse(content=result)
 
-@app.post("/search_resumes_nori")
-async def search_resumes_nori(query:str=Form(...)):
-    result = search_doc_nori(query)
-    
-    return result
+@app.post("/test")
+async def test(query: str = Form(...)):
 
-@app.delete("/reset_resumes_nori")
+    result = resume_test(query)
+
+    return JSONResponse(content=result)
+
+@app.post("/reset_index")
 async def delete_resumes_nori():
     delete_docs()
 
+    return ("삭제완료")
+
+@app.post("/pdf")
+async def create_upload_files(files: list[UploadFile] = File(...), sources: List[str] = Form(...)):
+    pdf_contents = []
+    results = []
+
+    # 업로드된 PDF 파일 처리
+    for file in files:
+        if file.content_type == "application/pdf":
+            # 임시 파일로 PDF 저장
+            with NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                shutil.copyfileobj(file.file, temp_file)
+                pdf_contents.append(temp_file.name)
+
+    # 각 PDF에 대해 텍스트 추출 및 JSON 변환
+    for pdf_content, source in zip(pdf_contents, sources):
+        # pdf 함수가 비동기 함수라면 await로 호출
+        result = await pdf(pdf_content)
+        main(result, source)
+
+        # PDF 파일 삭제
+        try:
+            os.remove(pdf_content)
+            print(f"PDF 파일 삭제 완료: {pdf_content}")
+        except Exception as e:
+            print(f"PDF 파일 삭제 실패: {e}")
+
+    await asyncio.sleep(3)
+
+    for source in sources:
+        info = await search(source)
+        results.append(info)
+    
+    # 결과 반환
+    return JSONResponse(results)
