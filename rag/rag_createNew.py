@@ -200,27 +200,30 @@ def generate_questions(job, type, combined_context, num_questions):
         - The difficulty level of the questions should be such that the interviewee can answer even if they do not know much about the news.
             - Consistent with the key themes of the news.
         - When creating questions, you should not mention the interviewee's occupation.
-        - The topic of the question must be a unique news topic that does not overlap.
         - Questions should be accessible enough for someone with little knowledge of the topic to provide an informed opinion
-        - The question must include one of the relevant elements, and questions must be created based on this element to judge the personality of the interviewee:
-            - Honesty (reliability)
+        - Each question must be designed to assess one of the following elements, and the relationship to the element must be clearly stated:
+            - Honesty
             - Interpersonal skills
             - Self-motivation (passion)
             - Adaptability
             - Self-awareness
+        - You should not ask for your own experience.
+        - The background explanation must include why the event occurred and any relevant contributing factors, such as systemic issues, policy, or other causes.
+        - The entire output (Background Information and Question) must be formatted as a single JSON object, and each field must be written in a single line.
+        - The question should be about what they think rather than about improvements or solutions.
+        - The last phrase in your question doesn't specify which elements are included.
+        - Ensure that each question has a similar level of background detail, including what happened, why it happened, and any broader social implications.
 
         # Policy
+        - The entire JSON object must be formatted in a single line.
         - Write your questions in Korean only.
         - You must strictly adhere to the following JSON format.
         - Only include the values corresponding to the questions in the output format.
         - Refer to users as '면접자'.
          
         # Example
-        - **Honesty (reliability)**: "Please talk about how important it is to maintain trust during the feedback process with team members during a project. If you have an experience where you communicated honestly while giving and receiving feedback to achieve the team's goals, please share."
-        - **Interpersonal skills**: "You said that clear messaging and active feedback are important for effective communication. Please explain in detail what communication methods you used in the past to resolve misunderstandings within the team."
-        - **Self-motivation (passion)**: "You said that while learning Java, you gained a sense of accomplishment by dividing big goals into small steps. If you have recently experienced self-motivation in a similar way, please explain what it was like. What was the biggest challenge along the way and how did you overcome it?"
-        - **Adaptability**: "When team goals changed, you said you tried to realign priorities and keep everyone moving in the same direction. Please tell us specifically how you adapted and contributed in a situation where the team's goals or direction changed drastically."
-        - **Self-awareness**: "You mentioned that problems arose during the project due to insufficient code reviews. What did you learn from that experience and what efforts did you make to improve yourself afterward? Describe how the lessons learned from this experience had a positive impact on your team and project."
+        1. **Background Information**: "Recently, there was an incident in Cheonan where an 8-year-old girl swallowed detergent. The reason nearby hospitals refused treatment in this case was because the hospital did not have a pediatric emergency specialist. As a result, it had to be transported to Daejeon, 80km away."
+        2. **Question**: "What efforts do you think are needed to solve these problems?"
 
         # Output Format
         {{
@@ -274,7 +277,9 @@ def generate_questions(job, type, combined_context, num_questions):
 
 # 크롤링 데이터 랜덤으로 가져오기
 def get_random_samples(data, sample_size=10):
-    return random.sample(data, min(sample_size, len(data)))
+    samples = random.sample(data, min(sample_size, len(data)))
+    print(f"검색 문서 확인: {samples}")
+    return samples
 
 # 새로운 질문을 생성하는 함수
 def create_newQ(job: str, type: str, answers: str) -> dict:
@@ -294,7 +299,7 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)
         combined_context = " ".join(random_samples)
-        num_questions = 10
+        num_questions = 10 if type == "technical" else 5
         questions = generate_questions(job, type, combined_context, num_questions)
 
         return questions
