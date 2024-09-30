@@ -20,24 +20,40 @@ if gpt_model is None:
 # OpenAI 클라이언트 초기화 및 api키 등록
 client = OpenAI(api_key=api_key)
 
-def assessment_each(question: str, answer: str, years: str, job: str, type: str) -> dict:
+def generate_assessment(question: str, answer: str, years: str, job: str, type: str) -> dict:
     if type == "technical":
         prompt = f"""
         # Role
         You are a technical interviewer with expertise in conducting interviews.
 
         # Task
-        1. Check if the answer ({answer}) contains any technical content. If there is no technical content, score it as 0.
-        2. If the answer contains technical content, check whether it is directly related to the technology mentioned in the question ({question}). If the answer is not directly related to the technology in the question, assign a score of 30 or lower, depending on the relevance of the answer.
-        3. If the answer is related to the technology in the question, evaluate the appropriateness of the answer based on the candidate's job role ({job}) and {years} years of experience. Assign a score from 0 to 100.
-        4. Explain the reason for the assigned score, focusing only on the technical content. The explanation must be provided in Korean.
-        5. Provide a model answer that would be considered ideal for this question, tailored to the candidate's job role and experience level. The model answer must be provided in Korean.
-        6. Evaluate the answer based on the following five criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
-        7. If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
+        Evaluate the answer based on the following criteria:
+        - Interviewer's role: {job}
+        - Interviewer's experience level: {years} years
+        - Interviewer's answer: {answer}
+        - Question : {question}
+
+        # Scoring Scale
+        A: Excellent
+        B: Good
+        C: Satisfactory
+        D: Poor
+        E: Unsatisfactory or No relevant content
+        F: No answer or No technical content
+
+        # Instructions
+        - Score according to `Scoring Scale`.
+        - When explaining the reasons fr the points awarded, focus only on the technical content. The description must be provided in Korean.
+        - Do not include any contents related to 'Scoring Scale' or score in the explanation.
+        - Provide an ideal answer to the question, considering the interviewee's role and experience, reflecting the reason you explained.
+        - The ideal answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
+        - Evaluate the answer based on the following five criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
+        - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
         - Ensure the evaluation is detailed and justifiable.
-        - Evaluate only the technical aspects of the answer; do not consider personality, job fit, or organizational fit.
+        - Evaluate only the technical aspects of the answer. Do not consider personality, job fit, or organizational fit.
+        - The score must be evaluated strictly according to the 'Scoring Scale' and expressed as an alphabetical letter.
         - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
         - Provide a model answer that reflects the appropriate depth for the job role and experience level, in Korean.
         - Responses must be in JSON format.
@@ -64,20 +80,36 @@ def assessment_each(question: str, answer: str, years: str, job: str, type: str)
     elif type == "behavioral":
         prompt = f"""
         # Role
-        You are an expert interviewer specializing in evaluating interpersonal aspects.
+        You are an expert on personality interviews.
 
-        # Task    
-        1. From an interpersonal interviewer’s perspective, explain the intention of ({question}) in 3 sentences or less.
-        2. Determine whether ({answer}) is an appropriate response to ({question}). If the answer is not related to the question, assign a score of 0.
-        3. Evaluate whether ({answer}) aligns with the intention of ({question}) and assign a score from 0 to 100.
-        4. Explain the reason for the assigned score. The explanation should focus solely on interpersonal aspects and be provided in Korean.
-        5. Evaluate the answer based on the following five criteria: honesty (reliability), interpersonal skills, self-motivation (passion), adaptability, and self-awareness. Assign a score between 1 and 100 for each criterion.
-        6. If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
+        # Task
+        Evaluate the answer based on the following criteria:
+        - Interviewer's role: {job}
+        - Interviewer's experience level: {years} years
+        - Interviewer's answer: {answer}
+        - Question : {question}
+
+        # Scoring Scale
+        A: Excellent
+        B: Good
+        C: Satisfactory
+        D: Poor
+        E: Unsatisfactory or No relevant content
+        F: No answer or No technical content
+
+        # Task
+        - Score according to `Scoring Scale`.
+        - When explaining the reasons for the points awarded, focus only on the personality aspects. The description must be provided in Korean.
+        - Do not include any contents related to 'Scoring Scale' or score in the explanation.
+        - Provide an ideal answer to the question, considering the interviewee's role and experience, reflecting the reason you explained.
+        - The ideal answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
+        - Evaluate the answer based on the following five criteria: honesty reliability, interpersonal skills, self motivation passion, adaptability, and self awareness. Assign a score between 1 and 100 for each criterion.
+        - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
         - Ensure the evaluation is detailed and justifiable.
-        - Evaluate only the interpersonal aspects of the answer.
-        - Do not consider the technical aspects.
+        - Evaluate only the interpersonal aspects of the answer. Do not consider the technical aspects.
+        - The score must be evaluated strictly according to the 'Scoring Scale' and expressed as an alphabetical letter.
         - Clearly explain the reasoning behind the assigned score, including how the job role and experience level influenced the evaluation. The explanation must be in Korean.
         - Responses must be in JSON format.
         - Place the score in the `score` value of the JSON output.
@@ -129,3 +161,10 @@ def assessment_each(question: str, answer: str, years: str, job: str, type: str)
 
     # 모든 재시도 실패 시 기본 구조 반환
     return {"error": "JSONDecodeError"}
+
+def assessment_each(question: str, answer: str, years: str, job: str, type: str) -> dict:
+    # 평가 생성
+    assessmentData = generate_assessment(question, answer, years, job, type)
+    print("@@@assessmentData", assessmentData)
+
+    return assessmentData

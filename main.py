@@ -82,7 +82,7 @@ async def process_audio(file: UploadFile = File(...)):
         # MP3 파일 삭제 (옵션: 디스크 공간 절약)
         os.remove(audio_output_path)
 
-        print("추출된 답변", transcript)
+        print("@@@@@추출된 답변", transcript)
 
         return JSONResponse(content={
             "status": "success",
