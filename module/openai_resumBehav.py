@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader
 import json
 
-def behavioral_resume(job, years, pdf_file=None, max_retries=3):
+def behavioral_resume(job, years, pdf_file=None, basic_questions=None, max_retries=3):
     load_dotenv()
     api_key = os.getenv("API_KEY")
     if api_key is None:
@@ -17,6 +17,9 @@ def behavioral_resume(job, years, pdf_file=None, max_retries=3):
         loader = PyPDFLoader(pdf_file)
         document = loader.load()
         resume_content = "\n".join([page.page_content for page in document])
+
+    # 기본 질문들을 문자열로 변환
+    basic_questions_str = "\n".join([f"{key}: {value}" for key, value in basic_questions.items() if value])
 
     # 이력서가 없는 경우의 프롬프트
     prompt_without_resume = f"""
@@ -33,6 +36,8 @@ def behavioral_resume(job, years, pdf_file=None, max_retries=3):
     - Generate questions only in Korean.
     - Responses must be in JSON format.
     - Do not include any additional explanations beyond the specified output format.
+    - Do not duplicate or closely resemble any of the following basic questions:
+    {basic_questions_str}
 
     # Output Format
     {{
@@ -56,6 +61,8 @@ def behavioral_resume(job, years, pdf_file=None, max_retries=3):
     - Generate questions only in Korean.
     - Responses must be in JSON format.
     - Do not include any additional explanations beyond the specified output format.
+    - Do not duplicate or closely resemble any of the following basic questions:
+    {basic_questions_str}
 
     # Output Format
     {{

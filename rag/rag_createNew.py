@@ -290,10 +290,7 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    # print("answers", answers)
-
     related_docs = searchDocs_generate(job, answers, index_name, type)
-    print("related_docs", related_docs)
 
     if related_docs:
         random_samples = get_random_samples(related_docs, sample_size=10)

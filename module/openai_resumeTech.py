@@ -5,7 +5,7 @@ from langchain.document_loaders import PyPDFLoader
 # from elasticsearch import Elasticsearch
 import json
 
-def technical_resume(job, years, pdf_file=None, max_retries=3):
+def technical_resume(job, years, pdf_file=None, basic_questions=None, max_retries=3):
     load_dotenv()
     api_key = os.getenv("API_KEY")
     if api_key is None:
@@ -18,6 +18,9 @@ def technical_resume(job, years, pdf_file=None, max_retries=3):
         loader = PyPDFLoader(pdf_file)
         document = loader.load()
         resume_content = "\n".join([page.page_content for page in document])
+
+    # 기본 질문들을 문자열로 변환
+    basic_questions_str = "\n".join([f"{key}: {value}" for key, value in basic_questions.items() if value])
 
     # 이력서가 없는 경우의 프롬프트
     prompt_without_resume = f"""
@@ -37,6 +40,8 @@ def technical_resume(job, years, pdf_file=None, max_retries=3):
     - Do not ask for code examples.
     - Randomly choose 2 out of 50 questions you created
     - Output only the selected 2 questions.
+    - Do not duplicate or closely resemble any of the following basic questions:
+    {basic_questions_str}
 
     # Output Format
     You must **strictly** adhere to the following JSON format:
@@ -68,6 +73,8 @@ def technical_resume(job, years, pdf_file=None, max_retries=3):
     - Construct questions at a level appropriate for the years of experience provided.
     - Do not ask for code examples.
     - Output only the selected 2 questions.
+    - Do not duplicate or closely resemble any of the following basic questions:
+    {basic_questions_str}
 
     # Output Format
     You must **strictly** adhere to the following JSON format:
