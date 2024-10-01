@@ -363,7 +363,13 @@ async def websocket_endpoint(websocket: WebSocket):
 async def create_upload_file(
     job: str = Form(...),
     years: str = Form(...),
-    file: UploadFile = File(None)
+    interviewType: str = Form(...),
+    file: UploadFile = File(None),
+    basicQuestion_Q3: str = Form(None),
+    basicQuestion_Q4: str = Form(None),
+    basicQuestion_Q5: str = Form(None),
+    basicQuestion_Q6: str = Form(None),
+    basicQuestion_Q7: str = Form(None)
 ):
     if not job or not years:
         raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
@@ -374,11 +380,22 @@ async def create_upload_file(
             shutil.copyfileobj(file.file, temp_file)
             pdf_content = temp_file.name
 
-    print(f"직업군: {job}, 연차: {years}")
+    print(f"직업군: {job}, 연차: {years}, 면접 유형: {interviewType}")
     if pdf_content:
         print(f"PDF 파일 저장 경로: {pdf_content}")
 
-    result = technical_resume(job, years, pdf_content)
+    # 기본 질문 처리
+    basic_questions = {
+        "Q3": basicQuestion_Q3,
+        "Q4": basicQuestion_Q4,
+        "Q5": basicQuestion_Q5,
+        "Q6": basicQuestion_Q6,
+        "Q7": basicQuestion_Q7
+    }
+    print("기본 질문:", basic_questions)
+
+    # 여기서 technical_resume 함수를 호출하고 필요한 인자들을 전달합니다.
+    result = technical_resume(job, years, pdf_content, basic_questions)
 
     # PDF 파일 삭제
     if pdf_content:
@@ -394,7 +411,13 @@ async def create_upload_file(
 async def create_upload_file_behavioral(
     job: str = Form(...),
     years: str = Form(...),
-    file: UploadFile = File(None)
+    interviewType: str = Form(...),
+    file: UploadFile = File(None),
+    basicQuestion_Q3: str = Form(None),
+    basicQuestion_Q4: str = Form(None),
+    basicQuestion_Q5: str = Form(None),
+    basicQuestion_Q6: str = Form(None),
+    basicQuestion_Q7: str = Form(None)
 ):
     if not job or not years:
         raise HTTPException(status_code=400, detail="직업군과 연차는 필수 입력 항목입니다.")
@@ -405,11 +428,22 @@ async def create_upload_file_behavioral(
             shutil.copyfileobj(file.file, temp_file)
             pdf_content = temp_file.name
 
-    print(f"직업군: {job}, 연차: {years}")
+    print(f"직업군: {job}, 연차: {years}, 면접 유형: {interviewType}")
     if pdf_content:
         print(f"PDF 파일 저장 경로: {pdf_content}")
 
-    result = behavioral_resume(job, years, pdf_content)
+    # 기본 질문 처리
+    basic_questions = {
+        "Q3": basicQuestion_Q3,
+        "Q4": basicQuestion_Q4,
+        "Q5": basicQuestion_Q5,
+        "Q6": basicQuestion_Q6,
+        "Q7": basicQuestion_Q7
+    }
+    print("기본 질문:", basic_questions)
+
+    # 여기서 behavioral_resume 함수를 호출하고 필요한 인자들을 전달합니다.
+    result = behavioral_resume(job, years, pdf_content, basic_questions)
 
     # PDF 파일 삭제
     if pdf_content:
