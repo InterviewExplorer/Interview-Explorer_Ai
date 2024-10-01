@@ -95,16 +95,16 @@ def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, 
 
     hits = response['hits']['hits']
     
-    print("\n유사성 판단 근거:")
-    for i, hit in enumerate(hits):
-        print(f"\n문서 {i+1}:")
-        print(f"질문: {hit['_source']['question']}")
-        print(f"유사도 점수: {hit['_score']:.2f}")
+    # print("\n유사성 판단 근거:")
+    # for i, hit in enumerate(hits):
+    #     print(f"\n문서 {i+1}:")
+    #     print(f"질문: {hit['_source']['question']}")
+    #     print(f"유사도 점수: {hit['_score']:.2f}")
     
-        if '_explanation' in hit:
-            explanation = hit['_explanation']
-            print("유사성 판단 이유:")
-            print_human_readable_explanation(explanation)
+    #     if '_explanation' in hit:
+    #         explanation = hit['_explanation']
+    #         print("유사성 판단 이유:")
+    #         print_human_readable_explanation(explanation)
 
     return [hit['_source']['question'] for hit in hits]
 
@@ -149,8 +149,6 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         - Score strictly according to the 'Scoring Scale' above only.
         - For an 'A' score, the answer must correctly include the concept of the technology mentioned in the question, plus any additional correct information related to that technology. Always give an 'A' score if there's any correct information beyond the basic concept, regardless of its depth or amount.
         - Only assign scores based on correct information. If any part of the answer is incorrect, adjust the score accordingly.
-        - Do not consider the depth, specificity, or amount of additional information. Any correct additional information beyond the basic concept is sufficient for an 'A' score.
-        - Do not arbitrarily consider other elements when scoring, such as specific details, examples, or in-depth explanations.
         - Do not include any contents related to 'Scoring Scale' or score in the explanation.
         - Provide a model answer to the question, considering the interviewee's role and experience. This model answer should demonstrate the correct concept and include some additional correct information.
         - The model answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
@@ -281,7 +279,6 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
     related_docs = searchDocs_evaluate(question, index_name, type)
-    print(related_docs)
 
     if related_docs:
         combined_context = " ".join(related_docs)
