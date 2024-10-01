@@ -4,41 +4,125 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 import time
+import torch
+from transformers import BertTokenizer, BertModel
 
+# Load environment variables
 load_dotenv()
 
-api_key = os.getenv("API_KEY")
-if api_key is None:
-    raise ValueError("API_KEY가 없습니다.")
+# 설정
+ELASTICSEARCH_HOST = os.getenv("elastic")
+API_KEY = os.getenv("API_KEY")
+GPT_MODEL = os.getenv("gpt")
 
-gpt_model = os.getenv("gpt")
-if gpt_model is None:
+if API_KEY is None:
+    raise ValueError("API_KEY가 없습니다.")
+if GPT_MODEL is None:
     raise ValueError("GPT_Model이 없습니다.")
 
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=API_KEY)
 
 # Elasticsearch 클라이언트 설정
-ELASTICSEARCH_HOST = os.getenv("elastic")
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
-# Elasticsearch에서 관련 문서 검색
-def searchDocs_evaluate(query, index_name):
+# BERT 모델 및 토크나이저 불러오기
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertModel.from_pretrained('bert-base-uncased')
+
+# 질문을 벡터로 변환하는 함수
+def get_vector(text):
+    inputs = tokenizer(text, return_tensors='pt')
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state[0][0].numpy()
+
+# Elasticsearch에서 벡터 기반 검색을 수행하는 함수
+def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, profile=True):
+    query_vector = get_vector(answers).tolist()
+    must_queries = []
+
+    # if type == "behavioral":
+    #     must_queries.append({
+    #         "range": {
+    #             "date_field": {
+    #                 "gte": thirty_days_ago_str,
+    #                 "lte": today_str
+    #             }
+    #         }
+    #     })
+
+    must_queries.append({
+        "bool": {
+            "should": [
+                {
+                    "match": {
+                        "question": {
+                            "query": answers,
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                },
+                {
+                    "script_score": {
+                        "query": {
+                            "match_all": {}
+                        },
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "params": {
+                                "query_vector": query_vector
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    })
+
     response = es.search(
         index=index_name,
         body={
             "query": {
-                "match": {
-                    "question": {
-                        "query": query,
-                        "fuzziness": "AUTO"
-                    }
+                "bool": {
+                    "must": must_queries
                 }
             },
-            "size": 10  # 관련 문서 10개를 가져옴
+            "size": 50,
+            "explain": explain,
+            "profile": profile
         }
     )
+
     hits = response['hits']['hits']
+    
+    print("\n유사성 판단 근거:")
+    for i, hit in enumerate(hits):
+        print(f"\n문서 {i+1}:")
+        print(f"질문: {hit['_source']['question']}")
+        print(f"유사도 점수: {hit['_score']:.2f}")
+    
+        if '_explanation' in hit:
+            explanation = hit['_explanation']
+            print("유사성 판단 이유:")
+            print_human_readable_explanation(explanation)
+
     return [hit['_source']['question'] for hit in hits]
+
+def print_human_readable_explanation(explanation):
+    if 'description' in explanation:
+        desc = explanation['description'].lower()
+        if 'weight' in desc:
+            print(f"- 텍스트 매칭 점수: {explanation['value']:.2f}")
+        elif 'script score' in desc:
+            print(f"- 벡터 유사도 점수: {explanation['value']:.2f}")
+        elif 'sum of' in desc:
+            print(f"- 총 유사도 점수: {explanation['value']:.2f}")
+        elif 'product of' in desc:
+            print(f"- 최종 유사도 점수: {explanation['value']:.2f}")
+    
+    if 'details' in explanation:
+        for detail in explanation['details']:
+            print_human_readable_explanation(detail)
 
 def evaluate_questions(question, answer, years, job, type, combined_context, num_questions):
     if type == "technical":
@@ -47,21 +131,36 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         You are a technical interviewer with expertise in conducting interviews.
 
         # Task
-        - Evaluate only the interest in new technologies and understanding of current trends.
-        - Regarding ({answer}), specific examples and details are excluded from evaluation factors.
-        - If the ({answer}) contains no content related to the technology or field mentioned in the question ({question}), assign a score of 0.
-        - If the ({answer}) is related to the field of technology mentioned in the question, assign a score between 50 and 100.
-        - If the ({answer}) is related to the specific technology mentioned in the question, assign a score between 70 and 100.
-        - Clearly explain the reason for the assigned score.
-        - Provide an ideal answer to this question, tailored to the candidate's job role and experience level, and written in Korean.
-        - The closer the ({answer}) is to the ideal answer, the closer the score should be to 100.
-        - Evaluate the answer based on the following five criteria: problem-solving ability, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
-        - If a criterion is not present in the answer, assign a null value; assign a score only if the criterion is included.
+        Evaluate the answer based on the following criteria:
+        - Interviewer's job: {job}
+        - Interviewer's experience level: {years} years
+        - Interviewer's answer: {answer}
+        - Question: {question}
+
+        # Scoring Scale
+        A: Correctly includes the concept of the technology mentioned in the question, as well as any additional correct information beyond that concept
+        B: Correctly explains only the concept of the technology mentioned in the question
+        C: Correctly explains any content about the technology mentioned in the question, even if not directly related to the question
+        D: Correctly explains content about the field to which the technology mentioned in the question belongs
+        E: Includes any correct technology-related content
+        F: No answer, no technical content, or incorrect information
+
+        # Instructions
+        - Score strictly according to the 'Scoring Scale' above only.
+        - For an 'A' score, the answer must correctly include the concept of the technology mentioned in the question, plus any additional correct information related to that technology. Always give an 'A' score if there's any correct information beyond the basic concept, regardless of its depth or amount.
+        - Only assign scores based on correct information. If any part of the answer is incorrect, adjust the score accordingly.
+        - Do not consider the depth, specificity, or amount of additional information. Any correct additional information beyond the basic concept is sufficient for an 'A' score.
+        - Do not arbitrarily consider other elements when scoring, such as specific details, examples, or in-depth explanations.
+        - Do not include any contents related to 'Scoring Scale' or score in the explanation.
+        - Provide a model answer to the question, considering the interviewee's role and experience. This model answer should demonstrate the correct concept and include some additional correct information.
+        - The model answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
+        - Evaluate the answer on a scale of 1 to 100 based on the following criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication.
+        - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
-        - Ensure the evaluation is detailed and justifiable.
-        - Clearly explain the reasoning behind the assigned score. The explanation must be in Korean.
-        - Provide a model answer that reflects the appropriate depth for the job role and experience level, in Korean.
+        - Provide the explanation for the answer in Korean, focusing only on the technical content without mentioning the score or scoring criteria.
+        - Generate a model answer in Korean, reflecting the content of your explanation.
+        - The 'score' value must be expressed as an alphabetical letter.
         - Responses must be in JSON format.
         - Place the score in the `score` value of the JSON output.
         - Place the explanation in the `explanation` value of the JSON output.
@@ -149,7 +248,7 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
     for attempt in range(max_retries):
         try:
             completion = client.chat.completions.create(
-                model=gpt_model,
+                model=GPT_MODEL,
                 messages=[
                     {"role": "system", "content": "You are a professional interviewer."},
                     {"role": "user", "content": prompt}
@@ -181,7 +280,8 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
-    related_docs = searchDocs_evaluate(job, index_name)
+    related_docs = searchDocs_evaluate(question, index_name, type)
+    print(related_docs)
 
     if related_docs:
         combined_context = " ".join(related_docs)
