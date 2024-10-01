@@ -286,7 +286,7 @@ def create_newQ(job: str, type: str, answers: str) -> dict:
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        index_name = 'test_rag_behavioral'
+        index_name = 'rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
