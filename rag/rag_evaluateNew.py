@@ -124,7 +124,7 @@ def print_human_readable_explanation(explanation):
         for detail in explanation['details']:
             print_human_readable_explanation(detail)
 
-def evaluate_questions(question, answer, years, job, type, combined_context, num_questions):
+def evaluate_answers(question, answer, years, job, type, combined_context, num_questions):
     if type == "technical":
         prompt = f"""
         # Role
@@ -152,7 +152,7 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         - Do not include any contents related to 'Scoring Scale' or score in the explanation.
         - Provide a model answer to the question, considering the interviewee's role and experience. This model answer should demonstrate the correct concept and include some additional correct information.
         - The model answer must consist only of content that can be verbally expressed. Do not include special characters such as hyphens or colons.
-        - Evaluate the answer on a scale of 1 to 100 based on the following criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication.
+        - Evaluate the answer based on the following five criteria: problem-solving, technical understanding, logical thinking, learning ability, and collaboration/communication. Assign a score between 1 and 100 for each criterion.
         - If a criterion is not present in the answer, assign a null value, and only assign a score if the criterion is included.
 
         # Policy
@@ -283,8 +283,8 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
     if related_docs:
         combined_context = " ".join(related_docs)
         num_questions = 10
-        questions = evaluate_questions(question, answer, years, job, type, combined_context, num_questions)
-
-        return questions
+        result = evaluate_answers(question, answer, years, job, type, combined_context, num_questions)
+        print("@@@assessmentNewData", result)
+        return result
     else:
         return {"Questions": ["문서를 찾지 못했습니다."]}

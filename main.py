@@ -274,13 +274,13 @@ async def evaluate(request: EvaluateRequest):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/each")
-async def each(request: EvaluateRequest):
-    # 요청 본문에서 데이터 추출
-    question = request.question
-    answer = request.answer
-    years = request.years
-    job = request.job
-    type = request.type
+async def each(
+    question: str = Form(...), 
+    answer: str = Form(...), 
+    years: str = Form(...), 
+    job: str = Form(...), 
+    type: str = Form(...)
+):
 
     if not question or not answer or not years or not job:
         raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
@@ -472,11 +472,9 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
 
     result = create_newQ(job, type, summaryOfAnswers)
 
-    # result = create_newQ(job, type, answers)
-
     return JSONResponse(content=result)
 
-@app.post("/newQ_evaluete")
+@app.post("/newQ_evaluate")
 async def newQuestion_evaluete(
     question: str = Form(...), 
     answer: str = Form(...), 
@@ -486,17 +484,10 @@ async def newQuestion_evaluete(
 ):
     if not question or not answer or not years or not job or not type:
         raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
-
+    
     result = evaluate_newQ(question, answer, years, job, type)
 
-    return JSONResponse(content=result)
-
-@app.post("/test")
-async def test(query: str = Form(...)):
-
-    result = resume_test(query)
-
-    return JSONResponse(content=result)
+    return JSONResponse(content={"evaluation": result})
 
 @app.post("/reset_index")
 async def delete_resumes_nori():
