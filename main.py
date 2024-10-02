@@ -44,7 +44,8 @@ from rag.rag_followUp import ragFollwUp
 from module.openai_answerJudgment import answerJudgment
 from module.openai_answerOrganize import answerOraganize
 from typing import Optional
-
+from module.search_resumes import search_result 
+from module.pdfSave_vector import add_resumes
 
 app = FastAPI()
 
@@ -526,7 +527,8 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
         # pdf 함수가 비동기 함수라면 await로 호출
         result = await pdf(pdf_content)
         main(result, source)
-
+        
+        add_resumes(pdf_content,source)
         # PDF 파일 삭제
         try:
             os.remove(pdf_content)
@@ -542,3 +544,8 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
     
     # 결과 반환
     return JSONResponse(results)
+
+@app.post("/search_resumes")
+async def search_resumes_fasttext(query: str = Form(...)):
+   print(search_result(query))
+   return search_result(query)
