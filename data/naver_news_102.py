@@ -105,21 +105,25 @@ def create_index():
     )
 
 # 기존 문서의 수를 파악하여 새로운 ID를 생성
-def get_next_id(index_name):
-    response = es.count(index=index_name)
-    return response['count']
+# def get_next_id(index_name):
+#     response = es.count(index=index_name)
+#     return response['count']
 
 # Elasticsearch에 문서 추가
 def index_documents(index_name, questions):
-    next_id = get_next_id(index_name)
-    for i, (question, date_field) in enumerate(questions, start=next_id):
-        vector = get_vector(question).tolist()
-        doc = {
-            'question': question,
-            'vector': vector,
-            'date_field': date_field
-        }
-        es.index(index=index_name, id=i, body=doc)
+    for question, date_field in questions:
+        try:
+            vector = get_vector(question).tolist()
+            doc = {
+                'question': question,
+                'vector': vector,
+                'date_field': date_field
+            }
+            # Elasticsearch가 자동으로 ID를 생성하도록 'id' 파라미터를 제거
+            response = es.index(index=index_name, body=doc)
+            print(f"Document indexed with ID: {response['_id']}")
+        except Exception as e:
+            print(f"Error indexing document: {e}")
 
 # 메인 페이지에서 모든 뉴스 링크 수집
 def collect_all_article_urls(driver):
