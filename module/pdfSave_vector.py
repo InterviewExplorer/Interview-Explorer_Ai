@@ -19,10 +19,13 @@ def add_resumes(source,resume_name):
             # print(text)
             text = text.replace('\n', ' ').strip()
             
-            sents=split_text(text)
+            sents=split_text_into_words(text)
             # print(sents)
             add_doccument(sents,resume_name)
-
+def split_text_into_words(text):
+    # 단언 단위로 텍스트를 분리합니다
+    sentences = word_tokenize(text)
+    return sentences
 def read_pdf(file_path):
     text = ""
     with fitz.open(file_path) as doc:

@@ -17,24 +17,49 @@ es = Elasticsearch([ELASTICSEARCH_HOST])
 def vector_search(query, top_k=30):
     query_vector = ft_model.get_sentence_vector(query)
     script_query = {
-        "script_score": {
-            "query": {
-                "bool": {
-                    "should": [
-                        {"match": {"content": query}},
-                        {"match_all": {}}
-                    ]
-                }
-            },
-            "script": {
-                "source": """
-                    double cosine_score = cosineSimilarity(params.query_vector, 'vector') + 1.0;
-                    double match_score = _score * 0.1;  // Adjust this multiplier as needed
-                    return cosine_score + match_score;
-                """,
-                "params": {"query_vector": query_vector.tolist()}
+         "script_score": {
+    "query": {
+      "bool": {
+        "should": [
+          {
+            "match": {
+              "content": {
+                "query": query,
+                "boost": 1
+              }
             }
-        }
+          },
+          {
+            "term": {
+              "content.keyword": {
+                "value": query,
+                "boost": 2
+              }
+            }
+          },
+          {
+            "match": {
+              "content.nori_mixed": {
+                "query": query,
+                "boost": 1.5
+              }
+            }
+          },
+          {
+            "match_all": {}
+          }
+        ]
+      }
+    },
+    "script": {
+      "source": """
+        double cosine_score = cosineSimilarity(params.query_vector, 'vector') + 1.0;
+        double text_score = _score * 0.1;  // Adjust this multiplier as needed
+        return cosine_score + text_score;  // Combine both scores
+      """,
+      "params": {"query_vector": query_vector.tolist()}
+    }
+  }
     }
     response = es.search(index=INDEX_NAME, body={"query": script_query, "size": top_k})
     return response['hits']['hits']
