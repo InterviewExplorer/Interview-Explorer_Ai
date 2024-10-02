@@ -237,10 +237,12 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         - The scores for each element in "criteria_scores" must be very strict.
         - If a criterion can be evaluated, assign a score; if it cannot be evaluated, assign a NULL value.
         - Determine the core elements or key personality factors that the question is intended to evaluate before scoring the response.
-
+        - Focus on evaluating how well the response addresses the key personality elements intended by the question, rather than the news content itself. If the answer effectively connects the individual's role and company context, it should be rated positively, regardless of specific references to the news.
+        
         # Policy
         - Responses must be provided in Korean only.
         - Technical aspects should never be considered in the interviewer's answers, only personality aspects should be considered.
+        - The explanation should explain what kind of personality question the news is intended to ask, rather than just mentioning the news.
         - You must create an explanation for the correct answer, focusing only on personality content.
         - A model answer is created by reflecting the explanation.
         - The 'score' value must be expressed as an alphabetical letter.
@@ -250,6 +252,7 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         - Place the model answer in the `model` value of the JSON output.
         - It must not contain any additional description beyond the specified output format.
         - You must evaluate whether each element of "criteria_scores" has been answered correctly as the question was intended.
+        - Evaluation should determine whether key elements of the news are identified and answered rather than the question itself.
         
         # Output Format
         {{
