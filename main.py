@@ -40,8 +40,13 @@ from module.openai_contentSummary import summaryOfContent
 from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
+from rag.rag_followUp import ragFollwUp
+from module.openai_answerJudgment import answerJudgment
+from module.openai_answerOrganize import answerOraganize
+from typing import Optional
 from module.search_resumes import search_result 
 from module.pdfSave_vector import add_resumes
+
 app = FastAPI()
 
 @app.get("/")
@@ -229,22 +234,30 @@ class UserInfo(BaseModel):
     type: str
 
 @app.post("/follow_question")
-async def follow_question(userinfo: UserInfo):
-    job = userinfo.job
-    years = userinfo.years
-    answer = userinfo.answer
-    questions = userinfo.questions
-    type = userinfo.type
+async def follow_question(job: str = Form(...), type: str = Form(...), answers: str = Form(...), questions: str = Form(...), 
+                            answerRag: Optional[str] = Form(None), questionsRag: Optional[str] = Form(None)):
 
-    if not answer or not years or not job:
-        raise HTTPException(status_code=400, detail="직업, 경력, 답변은 필수 항목입니다.")
-
-    try:
-        followQuestion = follow_Q(answer, years, job, questions, type)
-        return JSONResponse(content=followQuestion)
+    if not job or not type or not answers:
+        raise HTTPException(status_code=400, detail="직업, 타입, 답변은 필수 입력 항목입니다.")
     
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+    if answerRag is None or questionsRag is None:
+        resultOfSummary = answerOraganize(answers, questions,job, type)
+
+        return JSONResponse(content=resultOfSummary)
+    
+    else:
+        result = answerJudgment(questionsRag, answerRag, type)
+        print("이거냐 : " + result)
+
+        if result == "Yes":
+            result = ragFollwUp(job, type, questionsRag, answerRag)
+
+            return JSONResponse(content=result)
+        
+        else:
+            resultOfSummary = answerOraganize(answers, questions,job, type)
+
+            return JSONResponse(content=resultOfSummary)
 
 class EvaluateRequest(BaseModel):
     question: str
