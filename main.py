@@ -41,6 +41,7 @@ from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
 from module.search_resumes import search_result 
+from module.pdfSave_vector import add_resumes
 app = FastAPI()
 
 @app.get("/")
