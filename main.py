@@ -40,6 +40,8 @@ from module.openai_contentSummary import summaryOfContent
 from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
+from module.search_resumes import search_result
+from module.pdfSave_vector import add_resumes
 
 app = FastAPI()
 
@@ -274,13 +276,13 @@ async def evaluate(request: EvaluateRequest):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/each")
-async def each(
-    question: str = Form(...), 
-    answer: str = Form(...), 
-    years: str = Form(...), 
-    job: str = Form(...), 
-    type: str = Form(...)
-):
+async def each(request: EvaluateRequest):
+    # 요청 본문에서 데이터 추출
+    question = request.question
+    answer = request.answer
+    years = request.years
+    job = request.job
+    type = request.type
 
     if not question or not answer or not years or not job:
         raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
@@ -472,9 +474,11 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
 
     result = create_newQ(job, type, summaryOfAnswers)
 
+    # result = create_newQ(job, type, answers)
+
     return JSONResponse(content=result)
 
-@app.post("/newQ_evaluate")
+@app.post("/newQ_evaluete")
 async def newQuestion_evaluete(
     question: str = Form(...), 
     answer: str = Form(...), 
@@ -484,10 +488,17 @@ async def newQuestion_evaluete(
 ):
     if not question or not answer or not years or not job or not type:
         raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
-    
+
     result = evaluate_newQ(question, answer, years, job, type)
 
-    return JSONResponse(content={"evaluation": result})
+    return JSONResponse(content=result)
+
+@app.post("/test")
+async def test(query: str = Form(...)):
+
+    result = resume_test(query)
+
+    return JSONResponse(content=result)
 
 @app.post("/reset_index")
 async def delete_resumes_nori():
@@ -513,7 +524,8 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
         # pdf 함수가 비동기 함수라면 await로 호출
         result = await pdf(pdf_content)
         main(result, source)
-
+        
+        add_resumes(pdf_content,source)
         # PDF 파일 삭제
         try:
             os.remove(pdf_content)
@@ -529,3 +541,9 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
     
     # 결과 반환
     return JSONResponse(results)
+
+@app.post("/search_resumes")
+async def search_resumes_fasttext(query: str = Form(...)):
+   print(search_result(query))
+   return search_result(query)
+
