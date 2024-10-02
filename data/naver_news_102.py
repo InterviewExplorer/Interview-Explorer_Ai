@@ -1,11 +1,5 @@
 import time
-from datetime import datetime
-import requests
 import os
-from bs4 import BeautifulSoup
-from langchain_community.callbacks.uptrain_callback import formatter
-from sympy import content
-from torch.onnx.symbolic_opset11 import chunk
 from transformers import BertTokenizer, BertModel
 import torch
 from elasticsearch import Elasticsearch
@@ -17,7 +11,6 @@ from selenium.common import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.ie.service import Service
 
 load_dotenv()
 
@@ -97,7 +90,8 @@ def create_index():
                     "vector": {
                         "type": "dense_vector",
                         "dims": 768
-                    }
+                    },
+                    "date_field": {"type": "date"}
                 }
             }
         },
