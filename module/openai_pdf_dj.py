@@ -20,7 +20,8 @@ async def pdf(pdf_path, max_retries=3):
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text += page.extract_text()
-            
+
+
     prompt = f"""
     # Role
     Perform the task of extracting information from a resume received in PDF format.
