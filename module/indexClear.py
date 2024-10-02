@@ -6,3 +6,7 @@ INDEX_NAME="pdf_array"
 
 def delete_docs():
     es.delete_by_query(index=INDEX_NAME, body={"query": {"match_all": {}}}) 
+    es.delete_by_query(index="fasttext_search", body={"query": {"match_all": {}}}) 
+
+
+# ---------------------------------------------------------------------------
