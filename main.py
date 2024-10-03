@@ -40,6 +40,7 @@ from module.openai_contentSummary import summaryOfContent
 from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
+from rag.new_test_eva import evaluate_answer
 
 app = FastAPI()
 
@@ -538,3 +539,18 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
     
     # 결과 반환
     return JSONResponse(results)
+
+@app.post("/new_test_evaluete")
+async def new_test_evaluete(
+        question: str = Form(...),
+        answer: str = Form(...),
+        years: str = Form(...),
+        job: str = Form(...),
+        type: str = Form(...)
+):
+    if not question or not answer or not years or not job or not type:
+        raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
+
+    result = await evaluate_answer(question, answer, years, job, type)
+
+    return JSONResponse(content=result)
