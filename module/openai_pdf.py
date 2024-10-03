@@ -29,34 +29,6 @@ async def pdf(pdf_path, max_retries=3):
     Extract information from the following content:
     - PDF content:{text}
 
-    # Task: Classify Resume Content
-    Classify the resume content into the following four categories:
-
-    1. Personal Information
-    - Name
-    - Date of Birth
-    - Address
-    - Contact Number
-    - Email
-    - Educational Background
-
-    2. Projects
-    - Project Name
-    - Project Description
-
-    3. Work Experience
-    - Company Name
-    - Employment Period
-    - Job Responsibilities
-
-    4. Self-Introduction
-    - Strengths
-    - Weaknesses
-    - Motivation for Application
-    - Future Aspirations in the Company
-
-    Extract and summarize the information corresponding to each category.
-
     # Task1 : Name
     - Only write the name in Korean without any spaces.
 
