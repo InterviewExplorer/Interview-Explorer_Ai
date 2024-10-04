@@ -19,7 +19,8 @@ def add_resumes(source,resume_name):
             # print(text)
             text = text.replace('\n', ' ').strip()
             
-            sents=split_text_into_words(text)
+            # sents=split_text_into_words(text)
+            sents=text.split()
             # print(sents)
             add_doccument(sents,resume_name)
 def split_text_into_words(text):

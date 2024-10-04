@@ -14,7 +14,7 @@ INDEX_NAME = "fasttext_search"
 # Elasticsearch 연결
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
-def vector_search(query, top_k=30):
+def vector_search(query, top_k=5000):
     query_vector = ft_model.get_sentence_vector(query)
     script_query = {
          "script_score": {
@@ -59,7 +59,8 @@ def vector_search(query, top_k=30):
       """,
       "params": {"query_vector": query_vector.tolist()}
     }
-  }
+  },
+  
     }
     response = es.search(index=INDEX_NAME, body={"query": script_query, "size": top_k})
     return response['hits']['hits']
