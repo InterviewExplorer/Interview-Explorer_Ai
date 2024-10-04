@@ -23,8 +23,13 @@ async def pdf(pdf_path, max_retries=3):
             text += page.extract_text()
             
     # 오늘 날짜를 가져옵니다
-    today = datetime.now().strftime("%Y-%m")
+    today = datetime.now().strftime("%Y.%m")
     print("오늘", today)
+
+    # 1. Extract all dates or periods from content that includes "experience" or company information.
+    # 2. Calculate each period in years and months. If it says "현재" or "현재 재직중" (currently employed), replace it with the value of {today} for the calculation.
+    # 3. Add all calculated periods together. Example: 7 years 7 months + 4 years 6 months = 12 years 1 month.
+    # 4. Return the total sum of the periods as the experience value.
 
     prompt = f"""
     # Role
@@ -33,7 +38,7 @@ async def pdf(pdf_path, max_retries=3):
     # Instructions
     Extract information from the following content:
     - PDF content:{text}
-    - Today's date: {today}
+    - Today's date:{today}
 
     # Task1 : Name
     - Only write the name in Korean without any spaces.
@@ -51,17 +56,18 @@ async def pdf(pdf_path, max_retries=3):
     - Content in sections labeled as 'Experience' or 'Work Experience' is not considered a project.
     - From the resume content, summarize the purpose of each project in a few words, based on the project name or description provided in the project section.
 
-    # Task5 : Work experience
+    # Task5 : Work experience    
     - Sum up all the converted periods to calculate the total work experience.
-    - For any entries marked as 'current' or 'currently employed', use {today} as the end date for calculation.
+    - Replace any instance of "현재" or "현재 재직중" with {today} for calculation.
     - Work experience is only recognized if it includes both the term '경력' and company information.
     - If there is no information about work experience, indicate it as '없음'.
     - Internships or competition activities are excluded when calculating work experience.
 
-    Example:
-    2017.03 ~ 2020.02 = 3 years
-    2020.03 ~ present = 4 years 8 months
-    Total work experience = 7 years 8 months
+    Example1:
+    2017.03- 현재 재직 중 = 7 years 7 months
+    2012.08 ~ 2017.02 = 4 years 6 months
+    2007.03-2012.07 = 5 years 4 months
+    Total work experience = 17 years 7 months (7 years 7 months(2017.03- 현재 재직 중) + 4 years 6 months(2012.08 ~ 2017.02) + 5 years 4 months(2007.03-2012.07))
 
     # Task6 : Technical skills
     - Based on the resume content, extract the technical skills possessed by the interviewee in a "key":"value" format. In this case, the "key" represents the category of the skill, and the "value" represents the name of the skill.
@@ -84,7 +90,7 @@ async def pdf(pdf_path, max_retries=3):
     "date_of_birth": "2024-10-02"
     "number_of_projects": "3개"
     "project_description": "쇼핑몰, 교육플랫폼, 블로그"
-    "work_experience": "1년 3개월"
+    "work_experience": "17년 7개월 (7년 7개월(2017.03- 현재 재직 중) + 4년 6개월(2012.08 ~ 2017.02) + 5년 4개월(2007.03-2012.07))"
     "technical_skills": "백엔드: Spring Boot, Node.js, Django / 프론트엔드: React, Angular, Vue.js / ai: TensorFlow / 도구: Git / db: PostgreSQL, MongoDB/ 머신러닝: Keras, scikit-learn / 언어: java, python / 기타: 협업 도구(JIRA))"
     "summary_keywords": "#열정적 #창의적 #꼼꼼함"
     """
