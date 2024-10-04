@@ -37,20 +37,27 @@ def get_vector(text):
         outputs = model(**inputs)
     return outputs.last_hidden_state[0][0].numpy()
 
+# 현재 날짜로 부터 30일 전 까지의 날짜 함수
+def get_date_range(days: int):
+    today = datetime.now()
+    start_date = today - timedelta(days=days)
+    return today.strftime("%Y-%m-%d"), start_date.strftime("%Y-%m-%d")
+
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, profile=True):
+    today_str, thirty_days_ago_str = get_date_range(30)
     query_vector = get_vector(answers).tolist()
     must_queries = []
 
-    # if type == "behavioral":
-    #     must_queries.append({
-    #         "range": {
-    #             "date_field": {
-    #                 "gte": thirty_days_ago_str,
-    #                 "lte": today_str
-    #             }
-    #         }
-    #     })
+    if type == "behavioral":
+        must_queries.append({
+            "range": {
+                "date_field": {
+                    "gte": thirty_days_ago_str,
+                    "lte": today_str
+                }
+            }
+        })
 
     must_queries.append({
         "bool": {
@@ -183,43 +190,45 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         """
     elif type == "behavioral":
         prompt = f"""
-        # Role
-        You are a character interviewer with expertise in conducting interviews.
-
-        # Absolute Task
-        - Evaluate the answer based on the following criteria:
-            - Interviewer's job: {job}
-            - Interviewer's experience level: {years} years
-            - Interviewer's answer: {answer}
-            - Question: {question}
-        - You need to evaluate how the interviewee’s personal goals, values, and perspectives align with broader societal or professional objectives.
-        
         # Absolute Chain-of-Thought Reasoning
         - Question Analysis: Analyze what personality traits the question is intended to evaluate.
         - Answer Analysis: Identify how the answer reflects the personality traits that need to be evaluated.
         - Detailed Evaluation: Explain how well the interviewee’s answer reflects the key personality traits.
         - Score Assignment: Assign an appropriate grade to the answer based on the evaluation criteria.
         
+        # Abslute Role
+        You are a character interviewer with expertise in conducting interviews.
+
+        # Absolute Task
+        - Evaluate the interviewee's response based on the following criteria:
+          - **Job role**: {job}
+          - **Years of experience**: {years}
+          - **Interviewee's answer**: {answer}
+          - **Interview question**: {question}
+          
         # Absolute Policy
         - Responses must be in Korean.
         - In your answer, you should only consider the personality aspect and not the technical aspect.
         
+        ## Absolute Evaluation Policy
+        - You need to evaluate how the interviewee’s personal goals, values, and perspectives align with broader societal or professional objectives, and how they relate to their current job role.
+        
         ## Absolute Score Policy
         - The score is placed in the "score" type in the JSON output.
-        - The "score" must strictly be one of the grades defined in the "Grade" section below: A, B, C, D, E, F.
         - Do not deviate from the grades provided in the "Grade" section.
+        - The scoring must not be influenced by the scores given in the ## Absolute Criteria Scores Policy.
         
-        # Absolute Grade Policy
+        ## Absolute Grade Policy
         - Assign a score to the response based on the following criteria:
-            - If the answer is very specific, logically well-structured, and perfectly reflects the key personality elements required by the question, assign an "A" grade.
-            - If the answer faithfully reflects the key personality elements with logical explanations, assign a "B" grade.
-            - If the answer addresses some key elements but is general and lacks specificity, assign a "C" grade.
+            - If the answer is specific, logically well-structured, and sufficiently reflects the key personality elements required by the question, assign an “A” grade.
+            - If the answer faithfully reflects key character elements with logical explanation, demonstrates a clear understanding of the topic, but does not require examples or experience, a grade of “B” will be awarded.
+            - If the answer addresses some key elements but is general, lacks specificity, and fails to demonstrate a clear understanding, give it a grade of “C”
             - If the answer shows a lack of understanding of the key elements or lacks logical coherence, assign a "D" grade.
-            - If the answer does not match the intent of the question and is superficial, assign an "E" grade.
-            - If the answer is missing or completely unrelated to the question, assign an "F" grade.
-            
+            - If the answer does not match the intent of the question but provides some related context, a grade of “E” will be given.
+            - If the answer is missing, completely unrelated to the question, or explicitly indicates a lack of understanding of the question, assign an "F" grade.
+                    
         ## Never Explanation Policy
-        - Descriptions must not mention discussions.
+        - The description must not mention any discussion.
                 
         ## Absolute Explanation Policy
         - The description is placed in the "explanation" type of the JSON output.
@@ -228,14 +237,14 @@ def evaluate_questions(question, answer, years, job, type, combined_context, num
         - The explanation must not include any references to the news content.
         - When writing your description, you should first clearly state what personality factors are being assessed in the question.
         - Your description should not mention the interviewee.
+        - The explanation must not indicate that the answer lacks specific examples, nor should it suggest that the answer is inadequate due to a lack of specific examples.
 
         ## Absolute Model Policy
         - Model answers are placed in the “model” type of the JSON output.
-        - The response must be crafted in a way that ensures it receives a grade of A when the model answer is used again as a response.
-        - The model answer should focus on the core personality elements required by the question, rather than including all possible related elements.
-        - A model answer should demonstrate how the interviewee's personal goals or values align with broader societal or professional objectives.        - Use feedback from the "explanation" type value to improve the model answer, ensuring that any identified shortcomings or negative aspects are addressed effectively.
-        - Refer to the "A" grade conditions in the # Absolute Grade Policy section when crafting the model answer to ensure it meets all the requirements for an A grade.
-        - The model answer must not mention any company-specific goals or directly reference the company.
+        - It must be very specific, logically well-organized and perfectly reflect the key personality elements asked in the question.
+        - You must focus on the key personality elements required by the {question}.
+        - The model answer must refer to the shortcomings identified in the “explanation” type value of the JSON output.
+        - It must meet the A-grade conditions specified in the ‘Absolute Grading Policy’ section.
         
         ## Absolute Criteria Scores Policy
         - In the "score scale" of JSON output, the value of each element type must be an integer between 1 and 100.
