@@ -40,8 +40,13 @@ from module.openai_contentSummary import summaryOfContent
 from module.pdfSave import main
 from module.openai_pdf import pdf
 from module.pdfSearch import search
-from rag.new_test_eva import evaluate_answer
-
+from rag.rag_followUp import ragFollwUp
+from module.openai_answerJudgment import answerJudgment
+from module.openai_answerOrganize import answerOraganize
+from typing import Optional
+from module.search_resumes import search_result 
+from module.pdfSave_vector import add_resumes
+from module.openai_filter import get_work_experience
 app = FastAPI()
 
 @app.get("/")
@@ -229,22 +234,66 @@ class UserInfo(BaseModel):
     type: str
 
 @app.post("/follow_question")
-async def follow_question(userinfo: UserInfo):
-    job = userinfo.job
-    years = userinfo.years
-    answer = userinfo.answer
-    questions = userinfo.questions
-    type = userinfo.type
+async def follow_question(job: str = Form(...), type: str = Form(...), answers: str = Form(...), questions: str = Form(...), 
+                            answerRag: Optional[str] = Form(None), questionsRag: Optional[str] = Form(None)):
 
-    if not answer or not years or not job:
-        raise HTTPException(status_code=400, detail="직업, 경력, 답변은 필수 항목입니다.")
-
-    try:
-        followQuestion = follow_Q(answer, years, job, questions, type)
-        return JSONResponse(content=followQuestion)
+    if not job or not type or not answers:
+        raise HTTPException(status_code=400, detail="직업, 타입, 답변은 필수 입력 항목입니다.")
     
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+    if answerRag is None or questionsRag is None:
+        resultOfSummary = answerOraganize(answers, questions,job, type)
+
+        return JSONResponse(content=resultOfSummary)
+    
+    else:
+        result = answerJudgment(questionsRag, answerRag, type)
+        print("결과" + result)
+
+        if result == "Yes":
+            rag_result = ragFollwUp(job, type, questionsRag, answerRag)
+            rag = "Yes"
+
+            return JSONResponse(content={
+                "result": rag_result,
+                "rag": rag
+            })
+        
+        else:
+            resultOfSummary = answerOraganize(answers, questions,job, type)
+
+            return JSONResponse(content=resultOfSummary)
+        
+@app.post("/follow_evaluete")
+async def follow_evaluete(
+    question: str = Form(...), 
+    answer: str = Form(...), 
+    years: str = Form(...), 
+    job: str = Form(...), 
+    type: str = Form(...),
+    rag: str = Form(...)
+):
+    if not question or not answer or not years or not job or not type:
+        raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
+
+    # answerKey를 판단하는 로직 (예: 질문 내용이나 다른 방법으로)
+    answerKey = determine_answer_key(question)  # 이 함수는 구현해야 합니다
+
+    if answerKey == 'A9' or (answerKey == 'A10' and rag != "Yes"):
+        result = assessment_each(question, answer, years, job, type)
+    elif answerKey == 'A10' and rag == "Yes":
+        result = evaluate_newQ(question, answer, years, job, type)
+    else:
+        raise HTTPException(status_code=400, detail="잘못된 질문 키입니다.")
+
+    return JSONResponse(content={"evaluation": result})
+
+def determine_answer_key(question):
+    # 질문 내용을 기반으로 A9인지 A10인지 판단하는 로직
+    # 예시: 질문 내용에 특정 키워드가 있는지 확인
+    if "follow-up" in question.lower():
+        return 'A10'
+    else:
+        return 'A9'
 
 class EvaluateRequest(BaseModel):
     question: str
@@ -275,13 +324,13 @@ async def evaluate(request: EvaluateRequest):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/each")
-async def each(request: EvaluateRequest):
-    # 요청 본문에서 데이터 추출
-    question = request.question
-    answer = request.answer
-    years = request.years
-    job = request.job
-    type = request.type
+async def each(
+    question: str = Form(...), 
+    answer: str = Form(...), 
+    years: str = Form(...), 
+    job: str = Form(...), 
+    type: str = Form(...)
+):
 
     if not question or not answer or not years or not job:
         raise HTTPException(status_code=400, detail="직업, 경력, 질문, 답변은 필수 항목입니다.")
@@ -473,11 +522,9 @@ async def newQuestion_create(job: str = Form(...), type: str = Form(...), answer
 
     result = create_newQ(job, type, summaryOfAnswers)
 
-    # result = create_newQ(job, type, answers)
-
     return JSONResponse(content=result)
 
-@app.post("/newQ_evaluete")
+@app.post("/newQ_evaluate")
 async def newQuestion_evaluete(
     question: str = Form(...), 
     answer: str = Form(...), 
@@ -487,17 +534,10 @@ async def newQuestion_evaluete(
 ):
     if not question or not answer or not years or not job or not type:
         raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
-
+    
     result = evaluate_newQ(question, answer, years, job, type)
 
-    return JSONResponse(content=result)
-
-@app.post("/test")
-async def test(query: str = Form(...)):
-
-    result = resume_test(query)
-
-    return JSONResponse(content=result)
+    return JSONResponse(content={"evaluation": result})
 
 @app.post("/reset_index")
 async def delete_resumes_nori():
@@ -520,10 +560,13 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
 
     # 각 PDF에 대해 텍스트 추출 및 JSON 변환
     for pdf_content, source in zip(pdf_contents, sources):
-        # pdf 함수가 비동기 함수라면 await로 호출
+        # PDF 함수가 비동기 함수라면 await로 호출
         result = await pdf(pdf_content)
-        main(result, source)
 
+        # PDF 파일 저장
+        main(result, source)
+        
+        add_resumes(pdf_content,source)
         # PDF 파일 삭제
         try:
             os.remove(pdf_content)
@@ -540,16 +583,12 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
     # 결과 반환
     return JSONResponse(results)
 
-@app.post("/new_test_evaluete")
-async def new_test_evaluete(
-        question: str = Form(...),
-        answer: str = Form(...),
-        years: str = Form(...),
-        job: str = Form(...)
-):
-    if not question or not answer or not years or not job:
-        raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
+@app.post("/search_resumes")
+async def search_resumes_fasttext(query: str = Form(...)):
+   print(search_result(query))
+   return search_result(query)
 
-    result = await evaluate_answer(question, answer, years, job)
+@app.post("/career_filter")
+async def career_filter(career_options: List = Form(...)):
 
-    return JSONResponse(content=result)
+    return get_work_experience(career_options)

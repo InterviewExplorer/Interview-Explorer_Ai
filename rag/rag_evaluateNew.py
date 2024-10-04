@@ -103,16 +103,16 @@ def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, 
 
     hits = response['hits']['hits']
 
-    print("\n유사성 판단 근거:")
-    for i, hit in enumerate(hits):
-        print(f"\n문서 {i+1}:")
-        print(f"질문: {hit['_source']['question']}")
-        print(f"유사도 점수: {hit['_score']:.2f}")
-
-        if '_explanation' in hit:
-            explanation = hit['_explanation']
-            print("유사성 판단 이유:")
-            print_human_readable_explanation(explanation)
+    # print("\n유사성 판단 근거:")
+    # for i, hit in enumerate(hits):
+    #     print(f"\n문서 {i+1}:")
+    #     print(f"질문: {hit['_source']['question']}")
+    #     print(f"유사도 점수: {hit['_score']:.2f}")
+    
+    #     if '_explanation' in hit:
+    #         explanation = hit['_explanation']
+    #         print("유사성 판단 이유:")
+    #         print_human_readable_explanation(explanation)
 
     return [hit['_source']['question'] for hit in hits]
 
@@ -132,7 +132,7 @@ def print_human_readable_explanation(explanation):
         for detail in explanation['details']:
             print_human_readable_explanation(detail)
 
-def evaluate_questions(question, answer, years, job, type, combined_context, num_questions):
+def evaluate_answers(question, answer, years, job, type, combined_context, num_questions):
     if type == "technical":
         prompt = f"""
         # Role
@@ -322,13 +322,12 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
     related_docs = searchDocs_evaluate(question, index_name, type)
-    print(related_docs)
 
     if related_docs:
         combined_context = " ".join(related_docs)
         num_questions = 10
-        questions = evaluate_questions(question, answer, years, job, type, combined_context, num_questions)
-
-        return questions
+        result = evaluate_answers(question, answer, years, job, type, combined_context, num_questions)
+        print("@@@assessmentNewData", result)
+        return result
     else:
         return {"Questions": ["문서를 찾지 못했습니다."]}
