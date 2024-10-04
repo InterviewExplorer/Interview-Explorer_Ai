@@ -1,8 +1,8 @@
 from elasticsearch import Elasticsearch, NotFoundError
 
-ELASTICSEARCH_HOST="http://221.148.97.238:5600"
+ELASTICSEARCH_HOST="http://192.168.0.49:9200"
 es = Elasticsearch([ELASTICSEARCH_HOST])
-INDEX_NAME="pdf_array"
+INDEX_NAME="pdf_array2"
 
 def delete_docs():
     try:

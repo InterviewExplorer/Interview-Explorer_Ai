@@ -514,7 +514,7 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
         result = await pdf(pdf_content)
 
         # PDF 파일 저장
-        # main(result, source)
+        main(result, source)
 
         # PDF 파일 삭제
         try:

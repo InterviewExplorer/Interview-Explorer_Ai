@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import pdfplumber
 import os
 import asyncio
+from datetime import datetime
 
 async def pdf(pdf_path, max_retries=3):
     # Load environment variables
@@ -21,6 +22,10 @@ async def pdf(pdf_path, max_retries=3):
         for page in pdf.pages:
             text += page.extract_text()
             
+    # 오늘 날짜를 가져옵니다
+    today = datetime.now().strftime("%Y-%m")
+    print("오늘", today)
+
     prompt = f"""
     # Role
     Perform the task of extracting information from a resume received in PDF format.
@@ -28,6 +33,7 @@ async def pdf(pdf_path, max_retries=3):
     # Instructions
     Extract information from the following content:
     - PDF content:{text}
+    - Today's date: {today}
 
     # Task1 : Name
     - Only write the name in Korean without any spaces.
@@ -38,16 +44,24 @@ async def pdf(pdf_path, max_retries=3):
     - If there is no information at all about the date of birth, indicate it as '없음'.
 
     # Task3 : Number of projects
+    - Content in sections labeled as 'Experience' or 'Work Experience' is not considered a project.
     - The number of projects must be expressed only in numerical form.
 
     # Task4 : Project description
+    - Content in sections labeled as 'Experience' or 'Work Experience' is not considered a project.
     - From the resume content, summarize the purpose of each project in a few words, based on the project name or description provided in the project section.
 
     # Task5 : Work experience
-    - Sum up all the periods of work experience mentioned in the resume and express the total only in years and months. When the duration is indicated as 'present', 'currently employed', etc., calculate the period up to the current date.
-    - Work experience is only recognized if it includes the company name.
+    - Sum up all the converted periods to calculate the total work experience.
+    - For any entries marked as 'current' or 'currently employed', use {today} as the end date for calculation.
+    - Work experience is only recognized if it includes both the term '경력' and company information.
     - If there is no information about work experience, indicate it as '없음'.
-    - In expressing work experience, omit the unit (years or months) if its value is 0, and if the total period is 0, indicate it as '없음'.
+    - Internships or competition activities are excluded when calculating work experience.
+
+    Example:
+    2017.03 ~ 2020.02 = 3 years
+    2020.03 ~ present = 4 years 8 months
+    Total work experience = 7 years 8 months
 
     # Task6 : Technical skills
     - Based on the resume content, extract the technical skills possessed by the interviewee in a "key":"value" format. In this case, the "key" represents the category of the skill, and the "value" represents the name of the skill.
