@@ -6,8 +6,16 @@ import os
 from langchain_community.document_loaders import PyPDFLoader
 from elasticsearch import Elasticsearch
 from datetime import datetime
+from dotenv import load_dotenv
 
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+# .env 파일 로드
+load_dotenv()
+
+# Elasticsearch 호스트 정보를 .env 파일에서 가져옴
+ELASTICSEARCH_HOST = os.getenv("elastic")
+if ELASTICSEARCH_HOST is None:
+    raise ValueError("elastic 환경 변수가 설정되지 않았습니다.")
+
 es = Elasticsearch([ELASTICSEARCH_HOST])
 INDEX_NAME="pdf_array"
 api_key = os.getenv("API_KEY")
@@ -16,9 +24,6 @@ if api_key is None:
 
 work_list=[]
 
-
-
-    
 def is_match(value, number):
     if value == "신입":
         return number < 12
