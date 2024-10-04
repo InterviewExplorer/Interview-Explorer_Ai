@@ -247,17 +247,53 @@ async def follow_question(job: str = Form(...), type: str = Form(...), answers: 
     
     else:
         result = answerJudgment(questionsRag, answerRag, type)
-        print("이거냐 : " + result)
+        print("결과" + result)
 
         if result == "Yes":
-            result = ragFollwUp(job, type, questionsRag, answerRag)
+            rag_result = ragFollwUp(job, type, questionsRag, answerRag)
+            rag = "Yes"
 
-            return JSONResponse(content=result)
+            return JSONResponse(content={
+                "result": rag_result,
+                "rag": rag
+            })
         
         else:
             resultOfSummary = answerOraganize(answers, questions,job, type)
 
             return JSONResponse(content=resultOfSummary)
+        
+@app.post("/follow_evaluete")
+async def follow_evaluete(
+    question: str = Form(...), 
+    answer: str = Form(...), 
+    years: str = Form(...), 
+    job: str = Form(...), 
+    type: str = Form(...),
+    rag: str = Form(...)
+):
+    if not question or not answer or not years or not job or not type:
+        raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
+
+    # answerKey를 판단하는 로직 (예: 질문 내용이나 다른 방법으로)
+    answerKey = determine_answer_key(question)  # 이 함수는 구현해야 합니다
+
+    if answerKey == 'A9' or (answerKey == 'A10' and rag != "Yes"):
+        result = assessment_each(question, answer, years, job, type)
+    elif answerKey == 'A10' and rag == "Yes":
+        result = evaluate_newQ(question, answer, years, job, type)
+    else:
+        raise HTTPException(status_code=400, detail="잘못된 질문 키입니다.")
+
+    return JSONResponse(content={"evaluation": result})
+
+def determine_answer_key(question):
+    # 질문 내용을 기반으로 A9인지 A10인지 판단하는 로직
+    # 예시: 질문 내용에 특정 키워드가 있는지 확인
+    if "follow-up" in question.lower():
+        return 'A10'
+    else:
+        return 'A9'
 
 class EvaluateRequest(BaseModel):
     question: str

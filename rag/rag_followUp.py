@@ -189,9 +189,7 @@ def ragFollwUp(job: str, type: str, questionsRag: str, answerRag: str, explain=T
 
         # Output Format
         {{
-            "Question": [
-                "First follow-up question"
-            ]
+            "Question": ""
         }}
         """
     else:
@@ -203,22 +201,20 @@ def ragFollwUp(job: str, type: str, questionsRag: str, answerRag: str, explain=T
             completion = client.chat.completions.create(
                 model=gpt_model,
                 messages=[
-                    {"role": "system", "content": f"You are an expert in creating follow-up questions for {type} interviews."},
+                    {"role": "system", "content": "You are an expert in interviewing and question generation."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7
             )
 
-            response_content = completion.choices[0].message.content.strip()
+            response_content = completion.choices[0].message.content
+            result = json.loads(response_content)
             
-            try:
-                follow_up_questions = json.loads(response_content)["Q10"]
-                return {"Q10": follow_up_questions}
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON format in response")
+            return result
+        
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing failed, retrying... (Attempt {attempt + 1}/{max_retries})")
+            time.sleep(2)  # Short wait before retrying
 
-        except Exception as e:
-            print(f"Error occurred, retrying... (Attempt {attempt + 1}/{max_retries})")
-            time.sleep(2)
-
-    return {"error": "Failed to generate follow-up questions."}
+    # Return default structure if all retries fail
+    return {"error": "JSONDecodeError"}
