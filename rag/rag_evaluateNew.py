@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 from elasticsearch import Elasticsearch
 import json
 from openai import OpenAI
@@ -36,20 +37,27 @@ def get_vector(text):
         outputs = model(**inputs)
     return outputs.last_hidden_state[0][0].numpy()
 
+# 현재 날짜로 부터 30일 전 까지의 날짜 함수
+def get_date_range(days: int):
+    today = datetime.now()
+    start_date = today - timedelta(days=days)
+    return today.strftime("%Y-%m-%d"), start_date.strftime("%Y-%m-%d")
+
 # Elasticsearch에서 벡터 기반 검색을 수행하는 함수
 def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, profile=True):
+    today_str, thirty_days_ago_str = get_date_range(30)
     query_vector = get_vector(answers).tolist()
     must_queries = []
 
-    # if type == "behavioral":
-    #     must_queries.append({
-    #         "range": {
-    #             "date_field": {
-    #                 "gte": thirty_days_ago_str,
-    #                 "lte": today_str
-    #             }
-    #         }
-    #     })
+    if type == "behavioral":
+        must_queries.append({
+            "range": {
+                "date_field": {
+                    "gte": thirty_days_ago_str,
+                    "lte": today_str
+                }
+            }
+        })
 
     must_queries.append({
         "bool": {
@@ -94,7 +102,7 @@ def searchDocs_evaluate(answers: str, index_name: str, type: str, explain=True, 
     )
 
     hits = response['hits']['hits']
-    
+
     # print("\n유사성 판단 근거:")
     # for i, hit in enumerate(hits):
     #     print(f"\n문서 {i+1}:")
@@ -119,7 +127,7 @@ def print_human_readable_explanation(explanation):
             print(f"- 총 유사도 점수: {explanation['value']:.2f}")
         elif 'product of' in desc:
             print(f"- 최종 유사도 점수: {explanation['value']:.2f}")
-    
+
     if 'details' in explanation:
         for detail in explanation['details']:
             print_human_readable_explanation(detail)
@@ -182,54 +190,89 @@ def evaluate_answers(question, answer, years, job, type, combined_context, num_q
         """
     elif type == "behavioral":
         prompt = f"""
-        # Role
-        - You are an interviewer who specializes in personality interviews.
-
-        # Task
-        - Determine whether {answer} is appropriate for {question}.
-        - I need to output as an integer how much of each element contains the answer to the question:
-            - Honesty (reliability)
-            - Interpersonal skills
-            - Self-motivation (passion)
-            - Adaptability
-            - Self-awareness
-
-        # Instructions
-        - The integer must be a value between 1 and 100. 
-        - Any value less than 1 will be treated as null (no contribution).
+        # Absolute Chain-of-Thought Reasoning
+        - Question Analysis: Analyze what personality traits the question is intended to evaluate.
+        - Answer Analysis: Identify how the answer reflects the personality traits that need to be evaluated.
+        - Detailed Evaluation: Explain how well the interviewee’s answer reflects the key personality traits.
+        - Score Assignment: Assign an appropriate grade to the answer based on the evaluation criteria.
         
-        # Policy
-        - Write your questions in Korean only.
+        # Abslute Role
+        You are a character interviewer with expertise in conducting interviews.
 
-        # Definitions
-        - "score" must be an integer between 1 and 100, indicating how appropriate the answer {answer} is for the question {question}.
-        - "explanation" should clarify why the score for the answer {answer} to the question {question} was given.
-        - The value entered for "intention" should describe how much you know about recent issues and the purpose of the question {question}, focusing on one or more of the following factors if present:
-            - Honesty (reliability)
-            - Interpersonal skills
-            - Self-motivation (passion)
-            - Adaptability
-            - Self-awareness
-            
-        # Example
-        {{
-            "score": "75",
-            "explanation": "This response addresses both the positive impact of tax incentives on technicians and their limitations, and provides an in-depth analysis that goes beyond a simple positive or negative assessment. In particular, attracting talent over the long term is a complex combination of factors. “It’s great to highlight that tax benefits alone are not enough.",
-            "intention": "The intention of this question is to hear individual thoughts on the importance of securing human resources for the development of AI technology.",
-            "criteria_scores": {{
-                "honesty_reliability": 80,
-                "interpersonal_skills": null,
-                "self_motivation_passion": 60,
-                "adaptability": 75,
-                "self_awareness": null
-            }}
-        }}
+        # Absolute Task
+        - Evaluate the interviewee's response based on the following criteria:
+          - **Job role**: {job}
+          - **Years of experience**: {years}
+          - **Interviewee's answer**: {answer}
+          - **Interview question**: {question}
+          
+        # Absolute Policy
+        - Responses must be in Korean.
+        - In your answer, you should only consider the personality aspect and not the technical aspect.
+        
+        ## Absolute Evaluation Policy
+        - You need to evaluate how the interviewee’s personal goals, values, and perspectives align with broader societal or professional objectives, and how they relate to their current job role.
+        
+        ## Absolute Score Policy
+        - The score is placed in the "score" type in the JSON output.
+        - Do not deviate from the grades provided in the "Grade" section.
+        - The scoring must not be influenced by the scores given in the ## Absolute Criteria Scores Policy.
+        
+        ## Absolute Grade Policy
+        - Assign a score to the response based on the following criteria:
+            - If the answer is specific, logically well-structured, and sufficiently reflects the key personality elements required by the question, assign an “A” grade.
+            - If the answer faithfully reflects key character elements with logical explanation, demonstrates a clear understanding of the topic, but does not require examples or experience, a grade of “B” will be awarded.
+            - If the answer addresses some key elements but is general, lacks specificity, and fails to demonstrate a clear understanding, give it a grade of “C”
+            - If the answer shows a lack of understanding of the key elements or lacks logical coherence, assign a "D" grade.
+            - If the answer does not match the intent of the question but provides some related context, a grade of “E” will be given.
+            - If the answer is missing, completely unrelated to the question, or explicitly indicates a lack of understanding of the question, assign an "F" grade.
+                    
+        ## Never Explanation Policy
+        - The description must not mention any discussion.
+                
+        ## Absolute Explanation Policy
+        - The description is placed in the "explanation" type of the JSON output.
+        - Descriptions must not mention grades and scores.
+        - The explanation should emphasize the personality elements required by the question rather than providing an explanation of the question itself.
+        - The explanation must not include any references to the news content.
+        - When writing your description, you should first clearly state what personality factors are being assessed in the question.
+        - Your description should not mention the interviewee.
+        - The explanation must not indicate that the answer lacks specific examples, nor should it suggest that the answer is inadequate due to a lack of specific examples.
 
+        ## Absolute Model Policy
+        - Model answers are placed in the “model” type of the JSON output.
+        - It must be very specific, logically well-organized and perfectly reflect the key personality elements asked in the question.
+        - You must focus on the key personality elements required by the {question}.
+        - The model answer must refer to the shortcomings identified in the “explanation” type value of the JSON output.
+        - It must meet the A-grade conditions specified in the ‘Absolute Grading Policy’ section.
+        
+        ## Absolute Criteria Scores Policy
+        - In the "score scale" of JSON output, the value of each element type must be an integer between 1 and 100.
+        
+        ### Absolute Honesty and Reliability Policy
+        - You need to evaluate how honest and trustworthy the answers are.
+        - You should evaluate whether the answers honestly represent the interviewee's experience without exaggeration or inaccuracy.
+        
+        ### Absolute Interpersonal Skills Policy
+        - In your answer you should assess how good your interpersonal skills are.
+        - Scores must be assigned more strictly, reflecting the quality and depth of the answer in line with the expected standard.
+        - A response that lacks detail, depth, or fails to demonstrate any relevant personality traits should receive a significantly lower score, potentially below 30.
+        - The criteria scores must align with the overall grade assigned, ensuring consistency between individual element ratings and the final score.
+        
+        ### Absolute Self-Motivation and Passion Policy
+        - We need to evaluate how well the respondent motivates himself and communicates his passion.
+        
+        ### Absolute Adaptability Policy
+        - Assess your response to change and your ability to adapt to new environments.
+        
+        ### Absolute Self-Awareness Policy
+        - Assess whether you are clear about your strengths and weaknesses.
+        
         # Output Format
         {{
             "score": "",
             "explanation": "",
-            "intention": "",
+            "model": "",
             "criteria_scores": {{
                 "honesty_reliability": null,
                 "interpersonal_skills": null,
@@ -274,7 +317,7 @@ def evaluate_newQ(question: str, answer: str, years: str, job: str, type: str) -
     if type == 'technical':
         index_name = 'new_technology'
     elif type == 'behavioral':
-        index_name = 'test_rag_behavioral'
+        index_name = 'rag_behavioral'
     else:
         return {"error": "잘못된 type 값입니다. 'technical' 또는 'behavioral' 중 하나여야 합니다."}
 
