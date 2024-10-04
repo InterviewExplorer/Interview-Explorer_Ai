@@ -3,6 +3,7 @@ import tempfile
 import shutil
 import os
 import re
+import time
 from langdetect import detect
 from dotenv import load_dotenv
 
@@ -25,6 +26,9 @@ def transcribe_audio(file_stream, language="ko") -> str:
         temp_file_path = temp_file.name
 
     try:
+        # 시작 시간 기록
+        start_time = time.time()
+
         # OpenAI API를 사용하여 텍스트로 변환
         with open(temp_file_path, "rb") as audio_file:
             response = openai.audio.transcriptions.create(
@@ -33,18 +37,24 @@ def transcribe_audio(file_stream, language="ko") -> str:
                 language=language,
                 response_format="text"
             )
+        
+        # 종료 시간 기록 및 소요 시간 계산
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        
+        print(f"음성 변환에 걸린 시간: {elapsed_time:.2f}초")
             
-            # 언어 감지 및 필터링
-            detected_lang = detect(response)
-            if detected_lang not in ['ko', 'en']:
-                # 한국어나 영어가 아닌 경우 빈 문자열 반환
-                return ""
-            
-            # 한국어나 영어 문자만 허용
-            filtered_response = re.sub(r'[^가-힣a-zA-Z\s]', '', response)
+        # 언어 감지 및 필터링
+        detected_lang = detect(response)
+        if detected_lang not in ['ko', 'en']:
+            # 한국어나 영어가 아닌 경우 빈 문자열 반환
+            return ""
+        
+        # 한국어나 영어 문자만 허용
+        filtered_response = re.sub(r'[^가-힣a-zA-Z\s]', '', response)
 
-            # 반환된 텍스트가 "MBC 뉴스 이덕영입니다."인 경우 빈 문자열 반환
-            return "" if response.strip() == "MBC 뉴스 이덕영입니다." else response
+        # 반환된 텍스트가 "MBC 뉴스 이덕영입니다."인 경우 빈 문자열 반환
+        return "" if response.strip() == "MBC 뉴스 이덕영입니다." else response
     finally:
         # 임시 파일 삭제
         os.remove(temp_file_path)

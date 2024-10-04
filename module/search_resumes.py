@@ -6,11 +6,20 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import CharacterTextSplitter
 import fitz
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
+
 # FastText 모델 로드
 fasttext.util.download_model('ko', if_exists='ignore')
 ft_model = fasttext.load_model('cc.ko.300.bin')
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+
+# .env 파일에서 Elasticsearch 호스트 정보 가져오기
+ELASTICSEARCH_HOST = os.getenv("elastic")
 INDEX_NAME = "fasttext_search"
+
 # Elasticsearch 연결
 es = Elasticsearch([ELASTICSEARCH_HOST])
 

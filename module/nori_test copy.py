@@ -1,8 +1,15 @@
+import os
+from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from elasticsearch import Elasticsearch
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+
+# .env 파일 로드
+load_dotenv()
+
+# .env 파일에서 Elasticsearch 호스트 정보 가져오기
+ELASTICSEARCH_HOST = os.getenv("elastic")
 es = Elasticsearch([ELASTICSEARCH_HOST])
-INDEX_NAME="my_korean_index"
+INDEX_NAME = "my_korean_index"
 
 
 def read_pdf(resume):

@@ -5,16 +5,21 @@ import re
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from elasticsearch import Elasticsearch
+from dotenv import load_dotenv
 
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+# .env 파일 로드
+load_dotenv()
+
+# Elasticsearch 호스트 정보 가져오기
+ELASTICSEARCH_HOST = os.getenv("elastic")
+if ELASTICSEARCH_HOST is None:
+    raise ValueError("elastic 환경 변수가 설정되지 않았습니다.")
+
 es = Elasticsearch([ELASTICSEARCH_HOST])
 INDEX_NAME="my_korean_index"
 api_key = os.getenv("API_KEY")
 if api_key is None:
     raise ValueError("API_KEY가 없습니다.")
-
-
-
 
 def search_all(keyword):
     filtered_list=[]
@@ -35,16 +40,7 @@ def search_all(keyword):
     # print(sorted_data)
     return sorted_data
 
-
-
-
-    
-
-
 def openai_search(keyword,key,value):
-   
-
-
         client = OpenAI(
             api_key = api_key
         )
@@ -105,7 +101,6 @@ def openai_search(keyword,key,value):
         print("answer",answer)
         answer_json=json.loads(answer)
         return answer_json
-        
         
 # search_all("java, python")
        

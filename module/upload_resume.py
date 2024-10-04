@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import CharacterTextSplitter
@@ -5,7 +7,13 @@ from transformers import BertTokenizer, BertModel
 import torch
 import numpy as np
 from nltk.tokenize import sent_tokenize
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+# .env 파일 로드
+load_dotenv()
+
+# .env 파일에서 Elasticsearch 호스트 정보 가져오기
+ELASTICSEARCH_HOST = os.getenv('elastic')
+
+# Elasticsearch 클라이언트 초기화
 es = Elasticsearch([ELASTICSEARCH_HOST])
 INDEX_NAME="pdf-test"
 from transformers import AutoModel, AutoTokenizer

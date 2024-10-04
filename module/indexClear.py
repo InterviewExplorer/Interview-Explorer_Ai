@@ -1,8 +1,14 @@
 from elasticsearch import Elasticsearch, NotFoundError
+import os
+from dotenv import load_dotenv
 
-ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+# .env 파일 로드
+load_dotenv()
+
+# .env 파일에서 Elasticsearch 호스트 정보 가져오기
+ELASTICSEARCH_HOST = os.getenv("elastic")
 es = Elasticsearch([ELASTICSEARCH_HOST])
-INDEX_NAME="pdf_array"
+INDEX_NAME = "pdf_array"
 
 def delete_docs():
     try:
