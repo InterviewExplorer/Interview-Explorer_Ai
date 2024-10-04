@@ -545,12 +545,11 @@ async def new_test_evaluete(
         question: str = Form(...),
         answer: str = Form(...),
         years: str = Form(...),
-        job: str = Form(...),
-        type: str = Form(...)
+        job: str = Form(...)
 ):
-    if not question or not answer or not years or not job or not type:
+    if not question or not answer or not years or not job:
         raise HTTPException(status_code=400, detail="필수 입력 항목을 확인해주세요.")
 
-    result = await evaluate_answer(question, answer, years, job, type)
+    result = await evaluate_answer(question, answer, years, job)
 
     return JSONResponse(content=result)

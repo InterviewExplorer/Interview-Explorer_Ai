@@ -16,78 +16,77 @@ if GPT_MODEL is None:
 
 client = OpenAI(api_key=API_KEY)
 
-async def evaluate_answer(question: str, answer: str, years: str, job: str, type: str) -> dict:
+async def evaluate_answer(question: str, answer: str, years: str, job: str) -> dict:
     prompt = f"""
         # Role
         You are a character interviewer with expertise in conducting interviews.
 
-        # Task
-        Evaluate the answer based on the following criteria:
-        - Interviewer's job: {job}
-        - Interviewer's experience level: {years} years
-        - Interviewer's answer: {answer}
-        - Question: {question}
+        # Absolute Task
+        - Evaluate the answer based on the following criteria:
+            - Interviewer's job: {job}
+            - Interviewer's experience level: {years} years
+            - Interviewer's answer: {answer}
+            - Question: {question}
+        - You need to evaluate how the interviewee’s personal goals, values, and perspectives align with broader societal or professional objectives.
         
-        ### A-grade Example:
-        The incident involving the district chief being acquitted despite charges of inadequate response highlights the importance of accountability in public safety. Public institutions are entrusted with ensuring citizen safety, which involves proactive measures, transparent communication, and clearly defined responsibilities.
-        This perspective aligns closely with my values as an AI engineer. Just as public institutions must act transparently and responsibly, I believe that my role as an engineer requires the same standards. When developing AI systems, especially those with safety implications, it’s crucial to ensure transparency in decision-making processes, rigorous testing, and accountability for outcomes. For instance, AI models that predict crowd dynamics during events can help enhance public safety by providing timely alerts.
-        Working at this company, I aim to contribute by applying these principles—developing AI technology that not only meets technical standards but also serves a social good, ensuring trust and reliability in our solutions.
+        # Absolute Policy
+        - Responses must be in Korean.
+        - In your answer, you should only consider the personality aspect and not the technical aspect.
         
-        ### B-grade Example:
-        The responsibility of public institutions is vital for citizen safety, and recent incidents have shown that proactive responses and transparency are essential. Although there may not have been legal liability in this case, public institutions still need to demonstrate ethical accountability.
-        Similarly, as an AI engineer, I believe my role requires me to approach development responsibly. By predicting potential risks and ensuring transparency in our AI models, I can contribute to public safety.
+        ## Absolute Score Policy
+        - The score is placed in the "score" type in the JSON output.
+        - The "score" must strictly be one of the grades defined in the "Grade" section below: A, B, C, D, E, F.
+        - Do not deviate from the grades provided in the "Grade" section.
         
-        ### C-grade Example:
-        Public institutions must protect citizens and ensure their safety. Even if no legal wrongdoing is found, the responsibility for public safety should be taken seriously, and improvements should be made when needed.
-        As an engineer at this company, I aim to use AI to predict risks and contribute to enhancing public safety.
-        
-        ### D-grade Example:
-        The responsibility of public institutions is important, and their role is to protect citizens. I think better responses could have been made in the incident mentioned.
-        At this company, I hope to help improve public safety through technology.
-        
-        ### E-grade Example:
-        Public institutions need to be responsible. The issue seems not to have been handled well.
-        I want to contribute by working diligently at the company.
-        
-        ### F-grade Example:
-        I'm not sure about public institutions, but I would like to work at this company.
+        # Absolute Grade Policy
+        - Assign a score to the response based on the following criteria:
+            - If the answer is very specific, logically well-structured, and perfectly reflects the key personality elements required by the question, assign an "A" grade.
+            - If the answer faithfully reflects the key personality elements with logical explanations, assign a "B" grade.
+            - If the answer addresses some key elements but is general and lacks specificity, assign a "C" grade.
+            - If the answer shows a lack of understanding of the key elements or lacks logical coherence, assign a "D" grade.
+            - If the answer does not match the intent of the question and is superficial, assign an "E" grade.
+            - If the answer is missing or completely unrelated to the question, assign an "F" grade.
+            
+        ## Never Explanation Policy
+        - Descriptions must not mention discussions.
+                
+        ## Absolute Explanation Policy
+        - The description is placed in the "explanation" type of the JSON output.
+        - Descriptions must not mention grades and scores.
+        - The explanation should emphasize the personality elements required by the question rather than providing an explanation of the question itself.
+        - The explanation must not include any references to the news content.
+        - When writing your description, you should first clearly state what personality factors are being assessed in the question.
+        - Your description should not mention the interviewee.
 
-        # Scoring Scale
-        A: The answers are specific, coherent, and logically well-organized, perfectly reflecting the key personality elements of the question. In addition to the main elements, other personality elements are also well reflected, showing the depth and insight of the answers.
-        B: Your answers faithfully reflect key elements of your personality and provide logical and relevant explanations. However, it may lack specificity or sufficient reference to other personality factors.
-        C: Understand some of the key personality factors in the question and provide relevant basic answers. However, the answers may be somewhat general, lack specificity, or reflect little beyond the main elements.
-        D: There is a lack of understanding of some of the key personality elements of the question, or the answer is not logical. Although the main elements are mentioned very briefly, there is little depth or concrete examples, and there is no reflection of other personality elements.
-        E: The answers are answered in a way that does not match the intent of the question, rarely reflect relevant aspects of key personality factors, or are very superficial in content.
-        F: Included when there is no answer, when you do not know the question, or when the answer is unrelated to the question.
-
-        # Instructions
-        - Score strictly according to the 'Scoring Scale' above only.
-        - You should base your score on accurate information, and if any part of your answer is incorrect, your score should be adjusted accordingly.
-        - Do not arbitrarily consider other elements when scoring, such as specific details, examples, or in-depth explanations.
-        - Don't include anything related to your score in your description.
-        - Provide a model answer to the question, considering the interviewee's role and experience. This model answer should demonstrate the correct concept and include some additional correct information.
-        - Model answers should consist only of what can be expressed orally.
-        - Responses are evaluated on a scale of 1 to 100 based on criteria such as “honesty (trust),” “interpersonal relationships,” “adaptability,” “self-motivation (passion),” and “self-awareness.”
-        - If the answer contains no criteria, we assign a null value to the "score" value and assign a score only if the answer contains the criteria.
-        - The scores for each element in "criteria_scores" must be very strict.
-        - If a criterion can be evaluated, assign a score; if it cannot be evaluated, assign a NULL value.
-        - Determine the core elements or key personality factors that the question is intended to evaluate before scoring the response.
-        - Focus on evaluating how well the response addresses the key personality elements intended by the question, rather than the news content itself. If the answer effectively connects the individual's role and company context, it should be rated positively, regardless of specific references to the news.
+        ## Absolute Model Policy
+        - Model answers are placed in the “model” type of the JSON output.
+        - The response must be crafted in a way that ensures it receives a grade of A when the model answer is used again as a response.
+        - The model answer should focus on the core personality elements required by the question, rather than including all possible related elements.
+        - A model answer should demonstrate how the interviewee's personal goals or values align with broader societal or professional objectives.        - Use feedback from the "explanation" type value to improve the model answer, ensuring that any identified shortcomings or negative aspects are addressed effectively.
+        - Refer to the "A" grade conditions in the # Absolute Grade Policy section when crafting the model answer to ensure it meets all the requirements for an A grade.
+        - The model answer must not mention any company-specific goals or directly reference the company.
         
-        # Policy
-        - Responses must be provided in Korean only.
-        - Technical aspects should never be considered in the interviewer's answers, only personality aspects should be considered.
-        - The explanation should explain what kind of personality question the news is intended to ask, rather than just mentioning the news.
-        - You must create an explanation for the correct answer, focusing only on personality content.
-        - A model answer is created by reflecting the explanation.
-        - The 'score' value must be expressed as an alphabetical letter.
-        - Responses must be in JSON format.
-        - Place the score in the `score` value of the JSON output.
-        - Place the explanation in the `explanation` value of the JSON output.
-        - Place the model answer in the `model` value of the JSON output.
-        - It must not contain any additional description beyond the specified output format.
-        - You must evaluate whether each element of "criteria_scores" has been answered correctly as the question was intended.
-        - Evaluation should determine whether key elements of the news are identified and answered rather than the question itself.
+        ## Absolute Criteria Scores Policy
+        - In the "score scale" of JSON output, the value of each element type must be an integer between 1 and 100.
+        
+        ### Absolute Honesty and Reliability Policy
+        - You need to evaluate how honest and trustworthy the answers are.
+        - You should evaluate whether the answers honestly represent the interviewee's experience without exaggeration or inaccuracy.
+        
+        ### Absolute Interpersonal Skills Policy
+        - In your answer you should assess how good your interpersonal skills are.
+        - Scores must be assigned more strictly, reflecting the quality and depth of the answer in line with the expected standard.
+        - A response that lacks detail, depth, or fails to demonstrate any relevant personality traits should receive a significantly lower score, potentially below 30.
+        - The criteria scores must align with the overall grade assigned, ensuring consistency between individual element ratings and the final score.
+        
+        ### Absolute Self-Motivation and Passion Policy
+        - We need to evaluate how well the respondent motivates himself and communicates his passion.
+        
+        ### Absolute Adaptability Policy
+        - Assess your response to change and your ability to adapt to new environments.
+        
+        ### Absolute Self-Awareness Policy
+        - Assess whether you are clear about your strengths and weaknesses.
         
         # Output Format
         {{
@@ -110,8 +109,8 @@ async def evaluate_answer(question: str, answer: str, years: str, job: str, type
             completion = client.chat.completions.create(
                 model=GPT_MODEL,
                 messages=[
-                    {"role": "system", "content": "You are a professional interviewer."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": "Please evaluate the interviewee’s answer according to the above guidelines."}
                 ],
                 temperature=0
             )
