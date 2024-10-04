@@ -1,78 +1,86 @@
 from elasticsearch import Elasticsearch
+import fasttext
+import fasttext.util
 import numpy as np
-from transformers import BertTokenizer, BertModel
-import torch
-from transformers import AutoModel, AutoTokenizer
-# Elasticsearch 클라이언트 설정
+from nltk.tokenize import word_tokenize, sent_tokenize
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import CharacterTextSplitter
+import fitz
+# FastText 모델 로드
+fasttext.util.download_model('ko', if_exists='ignore')
+ft_model = fasttext.load_model('cc.ko.300.bin')
 ELASTICSEARCH_HOST="http://192.168.0.49:9200"
+INDEX_NAME = "fasttext_search"
+# Elasticsearch 연결
 es = Elasticsearch([ELASTICSEARCH_HOST])
-model = AutoModel.from_pretrained("klue/bert-base")
-tokenizer = AutoTokenizer.from_pretrained("klue/bert-base")
-INDEX_NAME="pdf-test"
 
-
-def get_vector(text):
-    # 입력 텍스트를 토큰화
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
-    
-    # BERT 모델을 사용해 텍스트 임베딩을 계산
-    with torch.no_grad():
-        outputs = model(**inputs)
-    
-    # 마지막 레이어의 출력 값(임베딩)을 추출
-    embeddings = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
-    return embeddings
-
-
-
-
-
-
-
-def list_resumes(query):
-        # 검색어 벡터 생성
-    query_text = query
-    query_vector = get_vector(query_text).tolist()  # 리스트로 변환
-
-    # Elasticsearch 쿼리 생성
-    query_body = {
-        "query": {
-            "script_score": {
-                "query": {
-                    "match_all": {}
-                },
-                "script": {
-                    "source": "cosineSimilarity(params.query_vector, 'vector')",
-                    "params": {
-                        "query_vector": query_vector
-                    }
-                }
+def vector_search(query, top_k=30):
+    query_vector = ft_model.get_sentence_vector(query)
+    script_query = {
+         "script_score": {
+    "query": {
+      "bool": {
+        "should": [
+          {
+            "match": {
+              "content": {
+                "query": query,
+                "boost": 1
+              }
             }
-        }
+          },
+          {
+            "term": {
+              "content.keyword": {
+                "value": query,
+                "boost": 2
+              }
+            }
+          },
+          {
+            "match": {
+              "content.nori_mixed": {
+                "query": query,
+                "boost": 1.5
+              }
+            }
+          },
+          {
+            "match_all": {}
+          }
+        ]
+      }
+    },
+    "script": {
+      "source": """
+        double cosine_score = cosineSimilarity(params.query_vector, 'vector') + 1.0;
+        double text_score = _score * 0.1;  // Adjust this multiplier as needed
+        return cosine_score + text_score;  // Combine both scores
+      """,
+      "params": {"query_vector": query_vector.tolist()}
     }
+  }
+    }
+    response = es.search(index=INDEX_NAME, body={"query": script_query, "size": top_k})
+    return response['hits']['hits']
 
-    # Elasticsearch에서 쿼리 실행
-    response = es.search(index=INDEX_NAME, body=query_body)
-    result=[]
-    for hit in response['hits']['hits']:
-        content = hit['_source'].get('content', 'No content field')
-        source = hit['_source'].get('source', 'No source field')
-        score = hit['_score']
-        result.append({
-        source : score,
+
+def search_result(query):
+    results=vector_search(query)
+    score_list = []
+    for hit in results:
+        # print(hit['_source']['source'])
+        # print(hit['_source']['content'])
+        # print(hit['_score'])
+        new_entry = {
+        "source": hit['_source']['source'],
+        "score": hit['_score']
+        
+    }
     
-    })
-    score_dict={}
-    for index in result:
-        for key, value in index.items():
-            if key in score_dict:
-                score_dict[key] += value
-                
-            else:
-                score_dict[key] = value
-                
+    # 동일한 source가 있는지 확인
+        if not any(entry['source'] == new_entry['source'] for entry in score_list):
+            score_list.append(new_entry)
+    
+    return score_list
 
-    sorted_dict = dict(sorted(score_dict.items(), key=lambda item: item[1],reverse=True))     
-    # print(sorted_dict)   
-    result = [{'source': key, 'score': value} for key, value in sorted_dict.items()]
-    return result
