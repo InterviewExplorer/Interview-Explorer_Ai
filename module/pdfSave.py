@@ -6,7 +6,7 @@ from langchain_text_splitters import CharacterTextSplitter
 
 # Elasticsearch 설정
 ELASTICSEARCH_HOST = os.getenv("elastic")
-INDEX_NAME = 'pdf_array'
+INDEX_NAME = 'pdf_array2'
 es = Elasticsearch([ELASTICSEARCH_HOST])
 
 # Sentence Transformer 모델 로드

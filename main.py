@@ -560,8 +560,10 @@ async def create_upload_files(files: list[UploadFile] = File(...), sources: List
 
     # 각 PDF에 대해 텍스트 추출 및 JSON 변환
     for pdf_content, source in zip(pdf_contents, sources):
-        # pdf 함수가 비동기 함수라면 await로 호출
+        # PDF 함수가 비동기 함수라면 await로 호출
         result = await pdf(pdf_content)
+
+        # PDF 파일 저장
         main(result, source)
         
         add_resumes(pdf_content,source)
