@@ -4,7 +4,7 @@ from elasticsearch import Elasticsearch
 import fasttext
 import fasttext.util
 import numpy as np
-from nltk.tokenize import word_tokenize, sent_tokenize
+
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import CharacterTextSplitter
 import fitz
@@ -31,10 +31,7 @@ def add_resumes(source,resume_name):
             sents=text.split()
             # print(sents)
             add_doccument(sents,resume_name)
-def split_text_into_words(text):
-    # 단언 단위로 텍스트를 분리합니다
-    sentences = word_tokenize(text)
-    return sentences
+
 def read_pdf(file_path):
     text = ""
     with fitz.open(file_path) as doc:
