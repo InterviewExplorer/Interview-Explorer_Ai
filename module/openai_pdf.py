@@ -52,7 +52,7 @@ async def pdf(pdf_path, max_retries=3):
 
     # Task5 : Work experience    
     - Extract all periods corresponding to experience and list them as a string, separated by "/".
-    - Work experience is only recognized if it includes both the term '경력' and company information.
+    - Include as work experience if it contains both the term '경력' and the company name.
     - If there is no information about work experience, indicate it as '없음'.
     - Internships or competition activities are excluded when calculating work experience.
 
@@ -104,8 +104,17 @@ async def pdf(pdf_path, max_retries=3):
 
                 response_content = completion.choices[0].message.content.strip()
 
-                work_experience = extract_work_experience(response_content)                
-                calculate_work_experience(work_experience)
+                # work_experience 추출
+                work_experience = extract_work_experience(response_content)
+                
+                if work_experience:
+                    # 계산된 work_experience로 대체
+                    calculated_experience = calculate_work_experience(work_experience)
+                    response_content = re.sub(
+                        r'"work_experience":\s*"[^"]*"',
+                        f'"work_experience": "{calculated_experience}"',
+                        response_content
+                    )
 
                 return response_content
             
@@ -129,13 +138,13 @@ def extract_work_experience(response_content):
         return match.group(1)
     return None
 
-
-
 def calculate_work_experience(work_experience):
     print("@@@@work_experience", work_experience)
 
     experiences = work_experience.split('/')
     current_date = datetime.now().strftime("%Y.%m")
+    total_years = 0
+    total_months = 0
 
     for i, experience in enumerate(experiences, 1):
         if any(keyword in experience for keyword in ['현재', '현재 재직 중', '현재 재직중']):
@@ -145,26 +154,30 @@ def calculate_work_experience(work_experience):
         if len(dates) == 2:
             start_date = dates[0].strip()
             end_date = dates[1].strip()
-            print(f"경력 {i}: 날짜 1: {start_date}, 날짜 2: {end_date}")
-            
-            try:
-                # Parsing the dates from "YYYY.MM" format
-                start = parser.parse(start_date + ".01", dayfirst=True)  # Adding a day to parse correctly
-                end = parser.parse(end_date + ".01", dayfirst=True)  # Adding a day to parse correctly
-                
-                # Calculate duration
-                duration = relativedelta(end, start)
-                
-                # If the end month is the same as the start month, we shouldn't count a full year.
-                if duration.months < 0:
-                    duration.years -= 1
-                    duration.months += 12
-                
-                years = duration.years
-                months = duration.months
-                
-                print(f"경력 {i} 기간: {years}년 {months}개월")
-            except ValueError:
-                print(f"경력 {i}: 날짜 형식 오류")
+
+            # 시작 날짜와 종료 날짜를 년과 월로 나누기
+            start_year, start_month = map(int, start_date.split('.'))
+            end_year, end_month = map(int, end_date.split('.'))
+
+            # 경력 기간 계산
+            years = end_year - start_year
+            months = end_month - start_month
+
+            if months < 0:
+                years -= 1
+                months += 12
+
+            total_years += years
+            total_months += months
+            print(f"경력 {i}: {years}년 {months}개월")
+
         else:
             print(f"경력 {i}: {experience} (올바른 형식이 아님)")
+
+    # 총 개월 수 계산 및 년/월로 변환
+    additional_years, remaining_months = divmod(total_months, 12)
+    final_years = total_years + additional_years
+    final_months = remaining_months
+
+    return f"{final_years}년 {final_months}개월"
+
