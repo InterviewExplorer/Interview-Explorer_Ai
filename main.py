@@ -234,14 +234,16 @@ class UserInfo(BaseModel):
     type: str
 
 @app.post("/follow_question")
-async def follow_question(job: str = Form(...), type: str = Form(...), answers: str = Form(...), questions: str = Form(...), 
+async def follow_question(job: str = Form(...), type: str = Form(...), answers: str = Form(...), questions: str = Form(...), followQuestion: Optional[str] = Form(None),
                             answerRag: Optional[str] = Form(None), questionsRag: Optional[str] = Form(None)):
+
+    print(followQuestion)
 
     if not job or not type or not answers:
         raise HTTPException(status_code=400, detail="직업, 타입, 답변은 필수 입력 항목입니다.")
     
     if answerRag is None or questionsRag is None:
-        resultOfSummary = answerOraganize(answers, questions,job, type)
+        resultOfSummary = answerOraganize(answers, questions,job, type, followQuestion)
 
         return JSONResponse(content=resultOfSummary)
     
@@ -259,7 +261,7 @@ async def follow_question(job: str = Form(...), type: str = Form(...), answers: 
             })
         
         else:
-            resultOfSummary = answerOraganize(answers, questions,job, type)
+            resultOfSummary = answerOraganize(answers, questions,job, type, followQuestion)
 
             return JSONResponse(content=resultOfSummary)
         
