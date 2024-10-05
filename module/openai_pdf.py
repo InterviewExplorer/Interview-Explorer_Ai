@@ -4,6 +4,10 @@ import pdfplumber
 import os
 import asyncio
 from datetime import datetime
+from dateutil import parser
+from dateutil.relativedelta import relativedelta
+import re
+import calendar
 
 async def pdf(pdf_path, max_retries=3):
     # Load environment variables
@@ -21,15 +25,6 @@ async def pdf(pdf_path, max_retries=3):
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text += page.extract_text()
-            
-    # 오늘 날짜를 가져옵니다
-    today = datetime.now().strftime("%Y.%m")
-    print("오늘", today)
-
-    # 1. Extract all dates or periods from content that includes "experience" or company information.
-    # 2. Calculate each period in years and months. If it says "현재" or "현재 재직중" (currently employed), replace it with the value of {today} for the calculation.
-    # 3. Add all calculated periods together. Example: 7 years 7 months + 4 years 6 months = 12 years 1 month.
-    # 4. Return the total sum of the periods as the experience value.
 
     prompt = f"""
     # Role
@@ -38,7 +33,6 @@ async def pdf(pdf_path, max_retries=3):
     # Instructions
     Extract information from the following content:
     - PDF content:{text}
-    - Today's date:{today}
 
     # Task1 : Name
     - Only write the name in Korean without any spaces.
@@ -57,17 +51,16 @@ async def pdf(pdf_path, max_retries=3):
     - From the resume content, summarize the purpose of each project in a few words, based on the project name or description provided in the project section.
 
     # Task5 : Work experience    
-    - Sum up all the converted periods to calculate the total work experience.
-    - Replace any instance of "현재" or "현재 재직중" with {today} for calculation.
-    - Work experience is only recognized if it includes both the term '경력' and company information.
+    - Extract all periods corresponding to experience and list them as a string, separated by "/".
+    - Include as work experience if it contains both the term '경력' and the company name.
     - If there is no information about work experience, indicate it as '없음'.
     - Internships or competition activities are excluded when calculating work experience.
 
-    Example1:
-    2017.03- 현재 재직 중 = 7 years 7 months
-    2012.08 ~ 2017.02 = 4 years 6 months
-    2007.03-2012.07 = 5 years 4 months
-    Total work experience = 17 years 7 months (7 years 7 months(2017.03- 현재 재직 중) + 4 years 6 months(2012.08 ~ 2017.02) + 5 years 4 months(2007.03-2012.07))
+    Example:
+    2017.03- 현재 재직 중
+    2012.08 ~ 2017.02
+    2007.03-2012.07
+    Total work experience = 2017.03 ~ 2024.10 / 2012.08 ~ 2017.02 / 2007.03 ~ 2012.07
 
     # Task6 : Technical skills
     - Based on the resume content, extract the technical skills possessed by the interviewee in a "key":"value" format. In this case, the "key" represents the category of the skill, and the "value" represents the name of the skill.
@@ -90,7 +83,7 @@ async def pdf(pdf_path, max_retries=3):
     "date_of_birth": "2024-10-02"
     "number_of_projects": "3개"
     "project_description": "쇼핑몰, 교육플랫폼, 블로그"
-    "work_experience": "17년 7개월 (7년 7개월(2017.03- 현재 재직 중) + 4년 6개월(2012.08 ~ 2017.02) + 5년 4개월(2007.03-2012.07))"
+    "work_experience": "2017.03 ~ 2024.10 / 2012.08 ~ 2017.02 / 2007.03 ~ 2012.07"
     "technical_skills": "백엔드: Spring Boot, Node.js, Django / 프론트엔드: React, Angular, Vue.js / ai: TensorFlow / 도구: Git / db: PostgreSQL, MongoDB/ 머신러닝: Keras, scikit-learn / 언어: java, python / 기타: 협업 도구(JIRA))"
     "summary_keywords": "#열정적 #창의적 #꼼꼼함"
     """
@@ -109,10 +102,20 @@ async def pdf(pdf_path, max_retries=3):
                     temperature=0
                 )
 
-                # Extract the response content
                 response_content = completion.choices[0].message.content.strip()
 
-                # Return the response as a string (not JSON)
+                # work_experience 추출
+                work_experience = extract_work_experience(response_content)
+                
+                if work_experience:
+                    # 계산된 work_experience로 대체
+                    calculated_experience = calculate_work_experience(work_experience)
+                    response_content = re.sub(
+                        r'"work_experience":\s*"[^"]*"',
+                        f'"work_experience": "{calculated_experience}"',
+                        response_content
+                    )
+
                 return response_content
             
             except KeyError:
@@ -129,4 +132,52 @@ async def pdf(pdf_path, max_retries=3):
     # Return the result
     return summation
 
+def extract_work_experience(response_content):
+    match = re.search(r'"work_experience":\s*"([^"]*)"', response_content)
+    if match:
+        return match.group(1)
+    return None
+
+def calculate_work_experience(work_experience):
+    print("@@@@work_experience", work_experience)
+
+    experiences = work_experience.split('/')
+    current_date = datetime.now().strftime("%Y.%m")
+    total_years = 0
+    total_months = 0
+
+    for i, experience in enumerate(experiences, 1):
+        if any(keyword in experience for keyword in ['현재', '현재 재직 중', '현재 재직중']):
+            experience = experience.replace('현재', current_date).replace('재직 중', '').replace('재직중', '').strip()
+        
+        dates = experience.split('~')
+        if len(dates) == 2:
+            start_date = dates[0].strip()
+            end_date = dates[1].strip()
+
+            # 시작 날짜와 종료 날짜를 년과 월로 나누기
+            start_year, start_month = map(int, start_date.split('.'))
+            end_year, end_month = map(int, end_date.split('.'))
+
+            # 경력 기간 계산
+            years = end_year - start_year
+            months = end_month - start_month
+
+            if months < 0:
+                years -= 1
+                months += 12
+
+            total_years += years
+            total_months += months
+            print(f"경력 {i}: {years}년 {months}개월")
+
+        else:
+            print(f"경력 {i}: {experience} (올바른 형식이 아님)")
+
+    # 총 개월 수 계산 및 년/월로 변환
+    additional_years, remaining_months = divmod(total_months, 12)
+    final_years = total_years + additional_years
+    final_months = remaining_months
+
+    return f"{final_years}년 {final_months}개월"
 
