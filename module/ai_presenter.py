@@ -34,6 +34,8 @@ async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
 
     # 'id' 값 가져오기
     clip_id = response_data.get('id')
+#     clip_id = "tlk_aQYTudaxKGw2HRO99X7r3"
+#     print(clip_id)
 
     # Retry until we have a clip_id or reach max attempts
     attempts = 0
@@ -47,6 +49,8 @@ async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
         print(clip_id)
         attempts += 1
 
+    # clip_id = response_data.get('id')
+    
     if not clip_id:
         return {"question": question, "error": "No 'id' found in response after retries"}
 

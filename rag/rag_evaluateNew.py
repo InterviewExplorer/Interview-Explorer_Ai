@@ -231,21 +231,24 @@ def evaluate_answers(question, answer, years, job, type, combined_context, num_q
         - The description must not mention any discussion.
                 
         ## Absolute Explanation Policy
-        - The description is placed in the "explanation" type of the JSON output.
-        - Descriptions must not mention grades and scores.
-        - The explanation should emphasize the personality elements required by the question rather than providing an explanation of the question itself.
-        - The explanation must not include any references to the news content.
-        - When writing your description, you should first clearly state what personality factors are being assessed in the question.
-        - Your description should not mention the interviewee.
-        - The explanation must not indicate that the answer lacks specific examples, nor should it suggest that the answer is inadequate due to a lack of specific examples.
-
-        ## Absolute Model Policy
-        - Model answers are placed in the “model” type of the JSON output.
-        - It must be very specific, logically well-organized and perfectly reflect the key personality elements asked in the question.
-        - You must focus on the key personality elements required by the {question}.
-        - The model answer must refer to the shortcomings identified in the “explanation” type value of the JSON output.
-        - It must meet the A-grade conditions specified in the ‘Absolute Grading Policy’ section.
+        - The explanation is placed in the "explanation" type of the JSON output.
+        - The explanation should focus on evaluating how well the answer reflects the personality traits required by the question.
+        - The explanation must clearly highlight the strengths and weaknesses of the answer, emphasizing areas for improvement.
+        - Avoid discussing specific examples or mentioning the interviewee's personal experiences.
+        - Do not mention scores or grades in the explanation.
         
+        ## Absolute Intention Policy
+        - Intention answers are placed in the "intention" type of the JSON output.
+        - The value entered in “intention” must be written in Korean only.
+        - The Intention must clearly reflect the general purpose of the question without explaining specific character traits.
+        - The output should connect the intention to the following personality traits, depending on the context of the question: 
+            - "honesty_reliability"
+            - "interpersonal_skills"
+            - "self_motivation_passion"
+            - "adaptability"
+            - "self_awareness"
+        - Ensure that the intention briefly explains which of these traits are being assessed and how they relate to the question's objective.
+
         ## Absolute Criteria Scores Policy
         - In the "score scale" of JSON output, the value of each element type must be an integer between 1 and 100.
         
@@ -272,7 +275,7 @@ def evaluate_answers(question, answer, years, job, type, combined_context, num_q
         {{
             "score": "",
             "explanation": "",
-            "model": "",
+            "intention": "",
             "criteria_scores": {{
                 "honesty_reliability": null,
                 "interpersonal_skills": null,
