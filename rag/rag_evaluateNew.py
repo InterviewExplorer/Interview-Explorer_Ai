@@ -239,6 +239,7 @@ def evaluate_answers(question, answer, years, job, type, combined_context, num_q
         
         ## Absolute Intention Policy
         - Intention answers are placed in the "intention" type of the JSON output.
+        - The value entered in “intention” must be written in Korean only.
         - The Intention must clearly reflect the general purpose of the question without explaining specific character traits.
         - The output should connect the intention to the following personality traits, depending on the context of the question: 
             - "honesty_reliability"
