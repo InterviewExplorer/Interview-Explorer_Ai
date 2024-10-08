@@ -37,8 +37,8 @@ async def fetch_result_url(key: str, question: str) -> Dict[str, Any]:
     
     # 'id' 값 가져오기
     # 여기 토큰 소모 때문에 주석처리
-    clip_id = response_data.get('id')
-    # clip_id = "tlk_aQYTudaxKGw2HRO99X7r3"
+    # clip_id = response_data.get('id')
+    clip_id = "tlk_aQYTudaxKGw2HRO99X7r3"
     print(clip_id)
     
     
