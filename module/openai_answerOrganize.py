@@ -22,7 +22,7 @@ client = OpenAI(api_key=api_key)
 
 def answerOraganize(answers: str, questions: str, job: str, type: str, followQuestion: str)-> dict:
 
-    print("이거 값 뭐냐" + followQuestion)
+    print(f"이거 값 뭐냐: {followQuestion}")
     print("이거는" + questions)
     print("이거는???" + answers)
 
