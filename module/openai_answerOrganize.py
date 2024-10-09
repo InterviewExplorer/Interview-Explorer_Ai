@@ -20,7 +20,11 @@ if gpt_model is None:
 # Initialize OpenAI client and register API key
 client = OpenAI(api_key=api_key)
 
-def answerOraganize(answers: str, questions: str, job: str, type: str, followQuestion: str) -> dict:
+def answerOraganize(answers: str, questions: str, job: str, type: str, followQuestion: str)-> dict:
+
+    print("이거 값 뭐냐" + followQuestion)
+    print("이거는" + questions)
+    print("이거는???" + answers)
 
     if followQuestion is None:
         if type == "technical":
